@@ -1,0 +1,6 @@
+{
+  "name": "Laila Vitória Artistry",
+  "description": "Portfolio e área de cliente para Laila Vitória Fotografia",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
