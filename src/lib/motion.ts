@@ -432,14 +432,19 @@ const buildCursor = () => {
 
   window.addEventListener('mousemove', onMove, { passive: true });
   window.addEventListener('mouseover', onOver, { passive: true });
-  window.addEventListener('mouseout', onLeave, { passive: true });
-  window.addEventListener('mouseenter', onEnter, { passive: true });
+  // mouseleave/mouseenter don't bubble, so binding them directly to the
+  // document only fires when the pointer actually exits/re-enters the page —
+  // unlike mouseout/mouseover on window, which also fire when hovering
+  // between adjacent elements (e.g. the densely packed header buttons),
+  // permanently hiding the cursor there.
+  document.addEventListener('mouseleave', onLeave, { passive: true });
+  document.addEventListener('mouseenter', onEnter, { passive: true });
 
   state.cleanup.push(() => {
     window.removeEventListener('mousemove', onMove);
     window.removeEventListener('mouseover', onOver);
-    window.removeEventListener('mouseout', onLeave);
-    window.removeEventListener('mouseenter', onEnter);
+    document.removeEventListener('mouseleave', onLeave);
+    document.removeEventListener('mouseenter', onEnter);
     document.body.classList.remove('has-custom-cursor');
     cursor?.remove();
   });
