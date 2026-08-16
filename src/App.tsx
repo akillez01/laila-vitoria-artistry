@@ -167,10 +167,7 @@ export default function App() {
         )
       ) : (
         /* Screen 3: Albums Historical View */
-        <AlbumsView
-          onBack={() => setCurrentView('portfolio')}
-          onOpenImageModal={handleOpenImageModal}
-        />
+        <AlbumsView onBack={() => setCurrentView('portfolio')} />
       )}
 
       {/* Footer */}

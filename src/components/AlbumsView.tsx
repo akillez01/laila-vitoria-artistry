@@ -1,13 +1,25 @@
-import React from 'react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import { ALBUM_IMAGES } from '../data/albumData';
-import { ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { api } from '../lib/api';
+import { AlbumImage } from '../types';
 
 interface AlbumsViewProps {
   onBack: () => void;
-  onOpenImageModal: (url: string, title: string) => void;
 }
 
-export const AlbumsView: React.FC<AlbumsViewProps> = ({ onBack, onOpenImageModal }) => {
+export const AlbumsView: React.FC<AlbumsViewProps> = ({ onBack }) => {
+  const [remoteImages, setRemoteImages] = useState<AlbumImage[] | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    api<{ images: AlbumImage[] }>('/api/albums')
+      .then(({ images }) => setRemoteImages(images))
+      .catch(() => setRemoteImages([]));
+  }, []);
+
+  const images = remoteImages && remoteImages.length > 0 ? remoteImages : ALBUM_IMAGES;
+
   return (
     <main className="min-h-screen bg-[#f9f9f9] dark:bg-[#0f1012] pt-8 pb-20">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12">
@@ -34,11 +46,12 @@ export const AlbumsView: React.FC<AlbumsViewProps> = ({ onBack, onOpenImageModal
 
         {/* Masonry-style Grid */}
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
-          {ALBUM_IMAGES.map((image) => (
+          {images.map((image, index) => (
             <div
               key={image.id}
               className="break-inside-avoid relative group overflow-hidden rounded-xl bg-neutral-200 dark:bg-neutral-800 cursor-pointer shadow-md hover:shadow-xl transition-all duration-300"
-              onClick={() => onOpenImageModal(image.url, image.title)}
+              onClick={() => setLightboxIndex(index)}
+              data-cursor="view"
             >
               <img
                 src={image.url}
@@ -62,6 +75,98 @@ export const AlbumsView: React.FC<AlbumsViewProps> = ({ onBack, onOpenImageModal
           ))}
         </div>
       </div>
+
+      {lightboxIndex !== null && (
+        <AlbumLightbox
+          images={images}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
+      )}
     </main>
+  );
+};
+
+const AlbumLightbox: React.FC<{
+  images: AlbumImage[];
+  index: number;
+  onClose: () => void;
+  onNavigate: (index: number) => void;
+}> = ({ images, index, onClose, onNavigate }) => {
+  const image = images[index];
+  const goPrev = () => onNavigate((index - 1 + images.length) % images.length);
+  const goNext = () => onNavigate((index + 1) % images.length);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') goPrev();
+      if (e.key === 'ArrowRight') goNext();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white/80 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+        aria-label="Fechar"
+      >
+        <X className="w-6 h-6" />
+      </button>
+
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              goPrev();
+            }}
+            className="absolute left-2 sm:left-6 text-white/80 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+            aria-label="Imagem anterior"
+          >
+            <ChevronLeft className="w-8 h-8" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              goNext();
+            }}
+            className="absolute right-2 sm:right-6 text-white/80 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+            aria-label="Próxima imagem"
+          >
+            <ChevronRight className="w-8 h-8" />
+          </button>
+        </>
+      )}
+
+      <div
+        className="max-w-6xl w-full max-h-[90vh] flex flex-col items-center gap-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={image.url}
+          alt={image.title}
+          className="max-w-full max-h-[75vh] object-contain rounded-md shadow-2xl"
+        />
+        <div className="text-center px-4">
+          <h3 className="font-serif italic font-medium text-white text-xl sm:text-2xl">{image.title}</h3>
+          {image.description && (
+            <p className="text-white/70 text-sm mt-1 max-w-2xl mx-auto">{image.description}</p>
+          )}
+          {images.length > 1 && (
+            <p className="text-white/40 text-xs mt-3 uppercase tracking-widest">
+              {index + 1} / {images.length}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };

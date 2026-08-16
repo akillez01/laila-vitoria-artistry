@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Camera, User, Mail, Phone, MapPin, Check, Save, Instagram, LogOut, ClipboardList, AlertCircle, Images, FolderHeart, ChevronDown, QrCode, Download, Tag } from 'lucide-react';
+import { ArrowLeft, Camera, User, Mail, Phone, MapPin, Check, Save, Instagram, LogOut, ClipboardList, AlertCircle, Images, FolderHeart, BookImage, ChevronDown, QrCode, Download, Tag } from 'lucide-react';
 import { AdminProfile, Order, ClientGallery } from '../types';
 import { api, apiUpload, ApiError } from '../lib/api';
 import { AdminPortfolioManager } from './AdminPortfolioManager';
 import { AdminGalleriesManager } from './AdminGalleriesManager';
 import { AdminInstagramManager } from './AdminInstagramManager';
 import { AdminPackagesManager } from './AdminPackagesManager';
+import { AdminAlbumManager } from './AdminAlbumManager';
 
 interface ProfileAdminViewProps {
   profile: AdminProfile;
@@ -22,7 +23,7 @@ export const ProfileAdminView: React.FC<ProfileAdminViewProps> = ({
   onLogout,
   onOpenImageModal,
 }) => {
-  const [tab, setTab] = useState<'perfil' | 'pedidos' | 'portfolio' | 'galerias' | 'pacotes' | 'instagram'>('perfil');
+  const [tab, setTab] = useState<'perfil' | 'pedidos' | 'portfolio' | 'album' | 'galerias' | 'pacotes' | 'instagram'>('perfil');
   const [profile, setProfile] = useState<AdminProfile>(initialProfile);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -139,6 +140,16 @@ export const ProfileAdminView: React.FC<ProfileAdminViewProps> = ({
           <Images className="w-3.5 h-3.5" /> Portfólio
         </button>
         <button
+          onClick={() => setTab('album')}
+          className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md transition-colors flex items-center gap-1.5 ${
+            tab === 'album'
+              ? 'bg-neutral-900 dark:bg-amber-500 text-white dark:text-neutral-950'
+              : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+          }`}
+        >
+          <BookImage className="w-3.5 h-3.5" /> Álbum
+        </button>
+        <button
           onClick={() => setTab('galerias')}
           className={`px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md transition-colors flex items-center gap-1.5 ${
             tab === 'galerias'
@@ -182,6 +193,8 @@ export const ProfileAdminView: React.FC<ProfileAdminViewProps> = ({
 
       {tab === 'portfolio' ? (
         <AdminPortfolioManager />
+      ) : tab === 'album' ? (
+        <AdminAlbumManager />
       ) : tab === 'galerias' ? (
         <AdminGalleriesManager initialCode={openGalleryCode} />
       ) : tab === 'pacotes' ? (

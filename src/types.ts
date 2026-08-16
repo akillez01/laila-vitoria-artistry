@@ -18,6 +18,13 @@ export interface PhotoItem {
   };
 }
 
+export interface AlbumImage {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+}
+
 export interface ClientGallery {
   code: string;
   clientName: string;

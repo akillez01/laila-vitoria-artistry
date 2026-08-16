@@ -8,6 +8,7 @@ import { hashPassword } from './auth';
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'contato@lailavitoria.com';
 const SEED_IMG_SRC = path.resolve(process.cwd(), 'src/assets/img');
 const SEED_IMG_DEST = path.resolve(process.cwd(), 'uploads/seed');
+const ALBUM_IMG_SRC = path.resolve(process.cwd(), 'src/assets/img/album');
 
 function generatePassword(): string {
   return crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 12) + '!A1';
@@ -180,6 +181,47 @@ function seedGalleries() {
   }
 }
 
+function copyAlbumSeedImage(filename: string): string {
+  fs.mkdirSync(SEED_IMG_DEST, { recursive: true });
+  const src = path.join(ALBUM_IMG_SRC, filename);
+  const dest = path.join(SEED_IMG_DEST, filename);
+  if (fs.existsSync(src)) {
+    fs.copyFileSync(src, dest);
+  }
+  return `/uploads/seed/${filename}`;
+}
+
+function seedAlbum() {
+  const count = (db.prepare('SELECT COUNT(*) as c FROM album_images').get() as { c: number }).c;
+  if (count > 0) {
+    console.log('Álbum já existe, pulando seed.');
+    return;
+  }
+
+  const images = [
+    { file: 'danca-contorcao-pb.jpeg', title: 'Expressão Cênica em Movimento', description: 'Registro dramático em preto e branco capturando a flexibilidade e a intensidade de uma bailarina em pleno palco.' },
+    { file: 'danca-saia-vermelha.jpeg', title: 'Solo em Vermelho e Azul', description: 'Bailarina em movimento sob luzes coloridas de palco, unindo drama e delicadeza em cada passo.' },
+    { file: 'danca-extensao-pb.jpeg', title: 'Precisão e Força', description: 'Extensão impecável capturada em preto e branco, evidenciando técnica e disciplina da dança.' },
+    { file: 'debutante-neon-15-pb.jpeg', title: 'Debutante sob Luz Neon', description: 'Retrato clássico em preto e branco da aniversariante iluminada pelo letreiro neon do grande dia.' },
+    { file: 'yasmin-sopra-vela-bolo.jpeg', title: 'Sopro dos 15 Anos', description: 'Yasmin sopra as velas em meio a borboletas e flores, selando o início de uma nova fase.' },
+    { file: 'yasmin-buque-baloes.jpeg', title: 'Sorriso entre Balões e Flores', description: 'Retrato espontâneo cercado por buquê e balões que marcam a data especial.' },
+    { file: 'festa-happy-birthday-cenario.jpeg', title: 'Cenário de Festa ao Ar Livre', description: 'Decoração autoral em tons de verde, a moldura perfeita para celebrações inesquecíveis.' },
+    { file: 'mesa-doces-pb.jpeg', title: 'Mesa de Doces em Preto e Branco', description: 'Still life elegante dos detalhes doces que compõem a celebração.' },
+    { file: 'abraco-avo-neta-igreja.jpeg', title: 'Abraço de Gerações', description: 'Momento emotivo entre avó e neta diante do altar, celebrando fé e família.' },
+    { file: 'discurso-agradecimento-igreja.jpeg', title: 'Discurso de Agradecimento', description: 'A aniversariante compartilha palavras de gratidão diante da comunidade, unindo espiritualidade e celebração.' },
+    { file: 'andor-cirio-procissao.jpeg', title: 'Andor Iluminado — Procissão Noturna', description: 'A imagem sacra emoldurada por flores brancas e amarelas segue em procissão, cercada pela multidão de fiéis.' },
+    { file: 'andor-cirio-flores.jpeg', title: 'Detalhe Floral do Andor', description: 'Close-up do andor ricamente decorado, capturando o brilho dourado e a devoção do Círio.' },
+  ];
+
+  const insert = db.prepare(
+    'INSERT INTO album_images (id, title, description, url, sort_order) VALUES (?, ?, ?, ?, ?)'
+  );
+  images.forEach((img, i) => {
+    const url = copyAlbumSeedImage(img.file);
+    insert.run(crypto.randomUUID(), img.title, img.description, url, i);
+  });
+}
+
 function seedPortfolio() {
   const count = (db.prepare('SELECT COUNT(*) as c FROM portfolio_photos').get() as { c: number }).c;
   if (count > 0) {
@@ -215,6 +257,7 @@ function main() {
   seedPackages();
   seedGalleries();
   seedPortfolio();
+  seedAlbum();
 
   console.log('\n✅ Seed concluído.');
   if (credentials) {
