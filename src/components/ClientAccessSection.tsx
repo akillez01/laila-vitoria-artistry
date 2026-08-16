@@ -1,7 +1,7 @@
+import { AlertCircle, KeyRound, Lock, Mail } from 'lucide-react';
 import React, { useState } from 'react';
-import { Lock, KeyRound, Mail, AlertCircle } from 'lucide-react';
-import { ClientGallery } from '../types';
 import { api, ApiError } from '../lib/api';
+import { ClientGallery } from '../types';
 
 interface ClientAccessSectionProps {
   onUnlockGallery: (gallery: ClientGallery) => void;
@@ -71,6 +71,7 @@ export const ClientAccessSection: React.FC<ClientAccessSectionProps> = ({ onUnlo
     <section
       className="bg-white dark:bg-[#181a1d] border-t border-neutral-200 dark:border-neutral-800 py-16 text-center transition-colors duration-300"
       id="client-access"
+      data-motion="reveal"
     >
       <div className="max-w-2xl mx-auto px-5 sm:px-8 md:px-16 flex flex-col items-center">
         <div className="w-16 h-16 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center mb-6 text-neutral-900 dark:text-amber-400 border border-neutral-300 dark:border-neutral-700 shadow-sm">
@@ -94,11 +95,10 @@ export const ClientAccessSection: React.FC<ClientAccessSectionProps> = ({ onUnlo
               setMode('code');
               setError('');
             }}
-            className={`px-4 py-2 rounded transition-colors ${
-              mode === 'code'
+            className={`px-4 py-2 rounded transition-colors ${mode === 'code'
                 ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-sm'
                 : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             Tenho um código
           </button>
@@ -108,17 +108,16 @@ export const ClientAccessSection: React.FC<ClientAccessSectionProps> = ({ onUnlo
               setMode('email');
               setError('');
             }}
-            className={`px-4 py-2 rounded transition-colors ${
-              mode === 'email'
+            className={`px-4 py-2 rounded transition-colors ${mode === 'email'
                 ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-sm'
                 : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             Recebi uma galeria gratuita
           </button>
         </div>
 
-        <form onSubmit={handleAccess} className="w-full max-w-sm relative space-y-4">
+        <form onSubmit={handleAccess} className="w-full max-w-sm relative space-y-4" data-motion="reveal">
           {mode === 'code' ? (
             <div className="relative">
               <KeyRound className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-amber-400" />

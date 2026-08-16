@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
 import { Instagram } from 'lucide-react';
-import { InstagramPost } from '../types';
+import React, { useEffect, useState } from 'react';
+import { INSTAGRAM_HANDLE, INSTAGRAM_URL } from '../data/photographyData';
 import { api } from '../lib/api';
-import { INSTAGRAM_URL, INSTAGRAM_HANDLE } from '../data/photographyData';
+import { InstagramPost } from '../types';
 
 export const InstagramSection: React.FC = () => {
   const [posts, setPosts] = useState<InstagramPost[]>([]);
@@ -28,6 +28,7 @@ export const InstagramSection: React.FC = () => {
       <section
         className="bg-white dark:bg-[#181a1d] border-t border-neutral-200 dark:border-neutral-800 py-16 transition-colors duration-300"
         id="instagram"
+        data-motion="reveal"
       >
         <div className="max-w-2xl mx-auto px-5 sm:px-8 md:px-16">
           <div className="flex flex-col items-center text-center gap-4 mb-6">
@@ -65,6 +66,7 @@ export const InstagramSection: React.FC = () => {
     <section
       className="bg-white dark:bg-[#181a1d] border-t border-neutral-200 dark:border-neutral-800 py-16 transition-colors duration-300"
       id="instagram"
+      data-motion="reveal"
     >
       <div className="max-w-[1440px] mx-auto px-5 sm:px-8 md:px-16">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -95,6 +97,7 @@ export const InstagramSection: React.FC = () => {
               target="_blank"
               rel="noreferrer"
               className="group relative shrink-0 w-40 sm:w-auto aspect-square rounded-lg overflow-hidden bg-neutral-200 dark:bg-neutral-800 snap-start"
+              data-motion="mask"
             >
               {post.mediaType === 'video' ? (
                 <video

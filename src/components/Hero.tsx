@@ -1,6 +1,6 @@
+import { ArrowRight, ExternalLink, Instagram, Link as LinkIcon, MessageCircle, Sparkles } from 'lucide-react';
 import React from 'react';
-import { ArrowRight, Link as LinkIcon, ExternalLink, Sparkles, Instagram, MessageCircle } from 'lucide-react';
-import { HERO_IMAGE_URL, INSTAGRAM_URL, INSTAGRAM_HANDLE, WHATSAPP_LINK, WHATSAPP_PHONE } from '../data/photographyData';
+import { HERO_IMAGE_URL, INSTAGRAM_HANDLE, INSTAGRAM_URL, WHATSAPP_LINK } from '../data/photographyData';
 import { BrandLogo } from './BrandLogo';
 
 interface HeroProps {
@@ -10,10 +10,10 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ onExplore, onOpenImageModal }) => {
   return (
-    <section className="max-w-[1440px] mx-auto px-5 sm:px-8 md:px-16 py-10 md:py-20 transition-colors duration-300">
+    <section className="max-w-[1440px] mx-auto px-5 sm:px-8 md:px-16 py-10 md:py-20 transition-colors duration-300" data-motion="reveal">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
         {/* Left Column: Heading & Introduction */}
-        <div className="lg:col-span-5 flex flex-col gap-5 z-10">
+        <div className="lg:col-span-5 flex flex-col gap-5 z-10" data-motion="reveal">
           <div className="flex items-center gap-3 flex-wrap">
             <div className="inline-flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
@@ -74,13 +74,14 @@ export const Hero: React.FC<HeroProps> = ({ onExplore, onOpenImageModal }) => {
         </div>
 
         {/* Right Column: Featured Image - Raiane Editorial Highlight */}
-        <div className="lg:col-span-7 relative group">
+        <div className="lg:col-span-7 relative group" data-motion="mask">
           <div className="aspect-[4/3] sm:aspect-[16/10] lg:aspect-[3/2] w-full overflow-hidden bg-neutral-900 rounded-xl relative shadow-2xl border-2 border-emerald-500/50 transition-colors">
             <img
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out cursor-pointer"
+              className="js-parallax w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000 ease-out cursor-pointer"
               src={HERO_IMAGE_URL}
               alt="Obra Editorial Destaque - Raiane em São João da Gente por Layla Vitória"
               onClick={() => onOpenImageModal(HERO_IMAGE_URL, 'Obra Editorial Destaque - Raiane em São João da Gente')}
+              data-motion="zoom"
             />
 
             {/* Direct Link Hover Overlay */}

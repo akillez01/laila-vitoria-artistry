@@ -1,6 +1,6 @@
+import { Award, Instagram, Link as LinkIcon, MapPin, MessageCircle } from 'lucide-react';
 import React, { useState } from 'react';
-import { Link as LinkIcon, Award, MapPin, Instagram, MessageCircle } from 'lucide-react';
-import { ABOUT_PORTRAIT_URL, INSTAGRAM_URL, INSTAGRAM_HANDLE, WHATSAPP_LINK } from '../data/photographyData';
+import { ABOUT_PORTRAIT_URL, INSTAGRAM_HANDLE, INSTAGRAM_URL, WHATSAPP_LINK } from '../data/photographyData';
 import { BrandLogo } from './BrandLogo';
 
 interface AboutSectionProps {
@@ -12,11 +12,11 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ onOpenImageModal, on
   const [showFullBio, setShowFullBio] = useState(false);
 
   return (
-    <section className="bg-white dark:bg-[#121315] py-16 md:py-24 border-y border-neutral-200 dark:border-neutral-800 transition-colors duration-300" id="about">
+    <section className="bg-white dark:bg-[#121315] py-16 md:py-24 border-y border-neutral-200 dark:border-neutral-800 transition-colors duration-300" id="about" data-motion="reveal">
       <div className="max-w-[1440px] mx-auto px-5 sm:px-8 md:px-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left Column: Biography */}
-          <div className="order-2 lg:order-1 flex flex-col justify-center">
+          <div className="order-2 lg:order-1 flex flex-col justify-center" data-motion="reveal">
             <div className="mb-4">
               <BrandLogo variant="full" size="lg" />
             </div>
@@ -38,7 +38,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ onOpenImageModal, on
                   <p>
                     Com base em Manaus, atua em todo o Brasil e no exterior. Sua carreira traz ampla bagagem na documentação de tradições populares como o Festival Folclórico de Parintins, cirandas, danças folclóricas e eventos corporativos de grande porte.
                   </p>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                     <div className="flex items-center gap-2.5 p-3 rounded-md bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
                       <Award className="w-5 h-5 text-emerald-500 shrink-0" />
@@ -91,7 +91,7 @@ export const AboutSection: React.FC<AboutSectionProps> = ({ onOpenImageModal, on
           </div>
 
           {/* Right Column: Photographer Profile Image */}
-          <div className="order-1 lg:order-2 flex flex-col items-center gap-6">
+          <div className="order-1 lg:order-2 flex flex-col items-center gap-6" data-motion="mask">
             <div className="w-full max-w-md aspect-[4/5] bg-neutral-950 rounded-xl overflow-hidden shadow-2xl relative group border-2 border-emerald-500/60">
               <img
                 className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"

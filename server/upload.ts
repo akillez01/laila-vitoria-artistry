@@ -9,10 +9,22 @@ export function makeUploader(subdir: string, opts?: { allowVideo?: boolean }) {
   const dest = path.join(UPLOADS_ROOT, subdir);
   fs.mkdirSync(dest, { recursive: true });
 
+  const extForMimeType: Record<string, string> = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+    'image/gif': '.gif',
+    'video/mp4': '.mp4',
+    'video/quicktime': '.mov',
+    'video/webm': '.webm',
+  };
+
   const storage = multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, dest),
     filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
+      // Extensão derivada do mimetype validado (nunca do originalname, que é
+      // controlado pelo cliente e poderia forjar .html/.svg para XSS armazenado).
+      const ext = extForMimeType[file.mimetype] || '';
       const name = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
       cb(null, name);
     },

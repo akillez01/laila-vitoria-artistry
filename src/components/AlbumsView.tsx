@@ -24,7 +24,7 @@ export const AlbumsView: React.FC<AlbumsViewProps> = ({ onBack, onOpenImageModal
               Álbuns & Inspirações
             </h1>
             <p className="mt-3 text-neutral-600 dark:text-neutral-400 max-w-2xl">
-              Um acervo histórico de imagens conceituais e editoriais que inspiraram o início deste projeto, demonstrando estética de alto padrão.
+              Um acervo de registros autorais — de coberturas de dança, celebrações de 15 anos e procissões culturais — reunidos com o mesmo olhar sensível e editorial.
             </p>
           </div>
           <div className="hidden sm:flex p-4 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
@@ -49,7 +49,7 @@ export const AlbumsView: React.FC<AlbumsViewProps> = ({ onBack, onOpenImageModal
               {/* Hover Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
                 <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold mb-2">
-                  Acervo Histórico
+                  Registro Autoral
                 </span>
                 <h3 className="font-serif italic font-medium text-white text-xl md:text-2xl mb-1">
                   {image.title}

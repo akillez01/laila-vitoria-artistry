@@ -1,7 +1,7 @@
+import { Compass, Instagram, Lock, Menu, MessageCircle, Moon, Sparkles, Sun, User, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { Sparkles, User, Menu, X, Lock, Sun, Moon, Instagram, MessageCircle, Compass } from 'lucide-react';
-import { BrandLogo } from './BrandLogo';
 import { INSTAGRAM_URL, WHATSAPP_LINK } from '../data/photographyData';
+import { BrandLogo } from './BrandLogo';
 
 interface NavbarProps {
   currentView: 'portfolio' | 'profile' | 'album';
@@ -25,9 +25,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <nav className="bg-[#f9f9f9]/95 dark:bg-[#0f1012]/95 backdrop-blur-md w-full top-0 z-40 border-b border-[#c4c7c7]/30 dark:border-neutral-800 sticky transition-colors duration-300">
+    <nav className="js-nav bg-[#f9f9f9]/95 dark:bg-[#0f1012]/95 backdrop-blur-md w-full top-0 z-40 border-b border-[#c4c7c7]/30 dark:border-neutral-800 sticky transition-colors duration-300">
       <div className="flex justify-between items-center w-full px-4 sm:px-8 md:px-12 max-w-[1440px] mx-auto h-20">
-        
+
         {/* Brand Logo & Name */}
         <button
           onClick={() => {
@@ -46,11 +46,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               onNavigate('portfolio');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className={`text-[10px] xl:text-xs font-bold uppercase tracking-widest pb-1 transition-all ${
-              currentView === 'portfolio'
+            className={`text-[10px] xl:text-xs font-bold uppercase tracking-widest pb-1 transition-all ${currentView === 'portfolio'
                 ? 'text-neutral-900 dark:text-emerald-400 border-b-2 border-neutral-900 dark:border-emerald-400'
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             Início
           </button>
@@ -60,11 +59,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               onNavigate('album');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className={`text-[10px] xl:text-xs font-bold uppercase tracking-widest pb-1 transition-all ${
-              currentView === 'album'
+            className={`text-[10px] xl:text-xs font-bold uppercase tracking-widest pb-1 transition-all ${currentView === 'album'
                 ? 'text-neutral-900 dark:text-emerald-400 border-b-2 border-neutral-900 dark:border-emerald-400'
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             Álbuns
           </button>
@@ -92,11 +90,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => onNavigate('profile')}
-            className={`text-[10px] xl:text-xs font-bold uppercase tracking-widest pb-1 transition-all flex items-center gap-1.5 ${
-              currentView === 'profile'
+            className={`text-[10px] xl:text-xs font-bold uppercase tracking-widest pb-1 transition-all flex items-center gap-1.5 ${currentView === 'profile'
                 ? 'text-neutral-900 dark:text-emerald-400 border-b-2 border-neutral-900 dark:border-emerald-400'
                 : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-            }`}
+              }`}
           >
             <User className="w-3 h-3 xl:w-3.5 xl:h-3.5" />
             Admin

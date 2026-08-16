@@ -1,7 +1,7 @@
 export interface PhotoItem {
   id: string;
   title: string;
-  category: 'casamentos' | 'retratos' | 'moda' | 'cultura' | 'esporte' | 'aniversarios' | 'eventos';
+  category: 'casamentos' | 'retratos' | 'moda' | 'cultura' | 'festivais' | 'esporte' | 'aniversarios' | 'eventos';
   url: string;
   aspectRatio?: string;
   description?: string;

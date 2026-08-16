@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
 import { AlertCircle, X } from 'lucide-react';
-import { Package } from '../types';
+import React, { useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
+import { Package } from '../types';
 import { PaymentOptions } from './PaymentOptions';
 
 export const PricingSection: React.FC = () => {
@@ -20,6 +20,7 @@ export const PricingSection: React.FC = () => {
     <section
       className="bg-neutral-50 dark:bg-[#121315] border-y border-neutral-200 dark:border-neutral-800 py-16 transition-colors duration-300"
       id="pricing"
+      data-motion="reveal"
     >
       <div className="max-w-[1440px] mx-auto px-5 sm:px-8 md:px-16">
         <div className="text-center max-w-2xl mx-auto mb-12">
@@ -39,6 +40,7 @@ export const PricingSection: React.FC = () => {
             <div
               key={pkg.id}
               className="flex flex-col bg-white dark:bg-[#181a1d] border border-neutral-200 dark:border-neutral-800 rounded-lg p-6 shadow-sm"
+              data-motion="reveal"
             >
               <h3 className="font-playfair text-lg font-bold text-neutral-900 dark:text-white mb-2">{pkg.name}</h3>
               <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed flex-1 mb-4">

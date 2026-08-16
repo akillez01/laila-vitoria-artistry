@@ -1,21 +1,22 @@
-import React, { useEffect, useState } from 'react';
-import { Navbar } from './components/Navbar';
-import { Hero } from './components/Hero';
-import { PortfolioGrid } from './components/PortfolioGrid';
+import { useEffect, useState } from 'react';
 import { AboutSection } from './components/AboutSection';
+import { AdminLogin } from './components/AdminLogin';
+import { AlbumsView } from './components/AlbumsView';
+import { CinemaOpening } from './components/CinemaOpening';
 import { ClientAccessSection } from './components/ClientAccessSection';
 import { ClientGalleryModal } from './components/ClientGalleryModal';
-import { ProfileAdminView } from './components/ProfileAdminView';
-import { AdminLogin } from './components/AdminLogin';
-import { ImageDirectLinkModal } from './components/ImageDirectLinkModal';
-import { GeminiChatDrawer } from './components/GeminiChatDrawer';
 import { ContactModal } from './components/ContactModal';
 import { Footer } from './components/Footer';
-import { AlbumsView } from './components/AlbumsView';
-import { PricingSection } from './components/PricingSection';
+import { GeminiChatDrawer } from './components/GeminiChatDrawer';
+import { Hero } from './components/Hero';
+import { ImageDirectLinkModal } from './components/ImageDirectLinkModal';
 import { InstagramSection } from './components/InstagramSection';
-import { ClientGallery, AdminProfile } from './types';
+import { Navbar } from './components/Navbar';
+import { PortfolioGrid } from './components/PortfolioGrid';
+import { PricingSection } from './components/PricingSection';
+import { ProfileAdminView } from './components/ProfileAdminView';
 import { api } from './lib/api';
+import { AdminProfile, ClientGallery } from './types';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'portfolio' | 'profile' | 'album'>('portfolio');
@@ -43,6 +44,24 @@ export default function App() {
       .finally(() => setAuthChecked(true));
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.Motion) return;
+    window.Motion.init({ lerp: 0.09, revealStaggerMs: 70 });
+    window.Motion.start();
+    return () => {
+      window.Motion?.reset();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.Motion) return;
+    window.Motion.reset();
+    window.requestAnimationFrame(() => {
+      window.Motion?.build();
+      window.Motion?.refresh();
+    });
+  }, [currentView]);
+
   // Retorno do checkout do Mercado Pago (?pagamento=sucesso|pendente|falha&pedido=ID):
   // reabre a galeria do cliente direto na tela de status/pagamento do pedido.
   useEffect(() => {
@@ -62,11 +81,11 @@ export default function App() {
           }
         );
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleLogout = async () => {
-    await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    await api('/api/auth/logout', { method: 'POST' }).catch(() => { });
     setAdminProfile(null);
     setCurrentView('portfolio');
   };
@@ -74,7 +93,7 @@ export default function App() {
   const scrollToSection = (sectionId: string) => {
     const el = document.getElementById(sectionId);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+      window.Motion?.scrollTo(el);
     }
   };
 
@@ -98,6 +117,8 @@ export default function App() {
       {/* Main View Switching */}
       {currentView === 'portfolio' ? (
         <main className="flex-1">
+          <CinemaOpening onExplore={() => scrollToSection('portfolio')} />
+
           {/* Hero Section */}
           <Hero
             onExplore={() => scrollToSection('portfolio')}
@@ -146,7 +167,7 @@ export default function App() {
         )
       ) : (
         /* Screen 3: Albums Historical View */
-        <AlbumsView 
+        <AlbumsView
           onBack={() => setCurrentView('portfolio')}
           onOpenImageModal={handleOpenImageModal}
         />

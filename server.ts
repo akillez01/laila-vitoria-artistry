@@ -1,8 +1,8 @@
+import './server/env';
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
-import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { UPLOADS_ROOT } from './server/upload';
 import { authRouter } from './server/routes/auth';
@@ -13,8 +13,6 @@ import { packagesRouter } from './server/routes/packages';
 import { ordersRouter } from './server/routes/orders';
 import { paymentsRouter } from './server/routes/payments';
 import { instagramRouter } from './server/routes/instagram';
-
-dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;

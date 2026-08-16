@@ -2,7 +2,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import type { Request, Response } from 'express';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-insecure-secret-change-me';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET não configurado.');
+}
 const COOKIE_NAME = 'lv_admin_token';
 const TOKEN_TTL = '7d';
 
