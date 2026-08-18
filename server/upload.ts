@@ -5,7 +5,7 @@ import crypto from 'crypto';
 
 export const UPLOADS_ROOT = path.resolve(process.cwd(), 'uploads');
 
-export function makeUploader(subdir: string, opts?: { allowVideo?: boolean }) {
+export function makeUploader(subdir: string, opts?: { allowVideo?: boolean; maxFileSizeMb?: number }) {
   const dest = path.join(UPLOADS_ROOT, subdir);
   fs.mkdirSync(dest, { recursive: true });
 
@@ -31,10 +31,11 @@ export function makeUploader(subdir: string, opts?: { allowVideo?: boolean }) {
   });
 
   const allowVideo = !!opts?.allowVideo;
+  const maxFileSizeMb = opts?.maxFileSizeMb ?? (allowVideo ? 40 : 15);
 
   return multer({
     storage,
-    limits: { fileSize: allowVideo ? 40 * 1024 * 1024 : 15 * 1024 * 1024 },
+    limits: { fileSize: maxFileSizeMb * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       const isImage = /^image\/(jpeg|png|webp|gif)$/.test(file.mimetype);
       const isVideo = allowVideo && /^video\/(mp4|quicktime|webm)$/.test(file.mimetype);

@@ -5,7 +5,7 @@ import { requireAdmin } from '../middleware/requireAdmin';
 import { makeUploader, publicUrlFor } from '../upload';
 
 export const portfolioRouter = Router();
-const uploader = makeUploader('portfolio', { allowVideo: true });
+const uploader = makeUploader('portfolio', { allowVideo: true, maxFileSizeMb: 250 });
 
 interface PortfolioRow {
   id: string;

@@ -225,7 +225,7 @@ const AddPhotoModal: React.FC<{ onClose: () => void; onCreated: (photo: PhotoIte
             ) : (
               <>
                 <Upload className="w-4 h-4" />
-                {uploading ? 'Enviando...' : mediaType === 'video' ? 'Selecionar vídeo (máx. 40MB)' : 'Selecionar imagem'}
+                {uploading ? 'Enviando...' : mediaType === 'video' ? 'Selecionar vídeo (máx. 250MB)' : 'Selecionar imagem'}
               </>
             )}
           </button>

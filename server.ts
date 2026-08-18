@@ -4,6 +4,7 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import cookieParser from 'cookie-parser';
+import multer from 'multer';
 import { UPLOADS_ROOT } from './server/upload';
 import { authRouter } from './server/routes/auth';
 import { adminProfileRouter } from './server/routes/adminProfile';
@@ -31,6 +32,23 @@ app.use('/api', packagesRouter);
 app.use('/api', ordersRouter);
 app.use('/api', paymentsRouter);
 app.use('/api', instagramRouter);
+
+app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (!err) return next();
+
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: 'Arquivo excede o tamanho máximo permitido.' });
+    }
+    return res.status(400).json({ error: `Falha no upload (${err.code}).` });
+  }
+
+  if (err instanceof Error && err.message === 'Formato de arquivo não suportado.') {
+    return res.status(400).json({ error: err.message });
+  }
+
+  return next(err);
+});
 
 // Lazy Gemini client getter
 let aiClient: GoogleGenAI | null = null;
