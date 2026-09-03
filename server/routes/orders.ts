@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import path from 'path';
-import * as archiver from 'archiver';
 import { db } from '../db';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { UPLOADS_ROOT } from '../upload';
@@ -73,7 +72,10 @@ ordersRouter.get('/orders/:id', (req, res) => {
 });
 
 // Public: download a .zip of the selected photos for a paid order
-ordersRouter.get('/orders/:id/download', (req, res) => {
+ordersRouter.get('/orders/:id/download', async (req, res) => {
+  // archiver is ESM-only; the production server is bundled as CJS by esbuild,
+  // so it must be loaded via dynamic import() rather than a static import.
+  const { ZipArchive } = await import('archiver');
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id) as OrderRow | undefined;
   if (!order) return res.status(404).json({ error: 'Pedido não encontrado.' });
   if (order.status !== 'approved') {
@@ -99,7 +101,7 @@ ordersRouter.get('/orders/:id/download', (req, res) => {
   res.setHeader('Content-Type', 'application/zip');
   res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`);
 
-  const archive = new archiver.ZipArchive({ zlib: { level: 9 } });
+  const archive = new ZipArchive({ zlib: { level: 9 } });
   archive.on('error', (err) => {
     console.error('Erro ao gerar zip de fotos:', err);
     res.status(500).end();

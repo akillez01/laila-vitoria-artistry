@@ -4,6 +4,7 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 import multer from 'multer';
 import { UPLOADS_ROOT } from './server/upload';
 import { authRouter } from './server/routes/auth';
@@ -19,9 +20,12 @@ import { instagramRouter } from './server/routes/instagram';
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
-app.use('/uploads', express.static(UPLOADS_ROOT));
+// Filenames are unique per upload (timestamp + random hex) and never overwritten,
+// so a given URL's content never changes — safe to cache aggressively.
+app.use('/uploads', express.static(UPLOADS_ROOT, { maxAge: '30d', immutable: true }));
 
 app.use('/api/auth', authRouter);
 app.use('/api', adminProfileRouter);
@@ -133,9 +137,20 @@ async function setupServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    // Vite fingerprints filenames in /assets with a content hash, so those are
+    // safe to cache forever; everything else (frames, favicons, index.html)
+    // can change without a filename change, so it gets a short cache instead.
+    app.use(
+      '/assets',
+      express.static(path.join(distPath, 'assets'), { maxAge: '1y', immutable: true }),
+    );
+    // index: false so index.html is never served with the long default cache below —
+    // the catch-all route serves it explicitly with no-cache instead.
+    app.use(express.static(distPath, { maxAge: '1d', index: false }));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      res.sendFile(path.join(distPath, 'index.html'), {
+        headers: { 'Cache-Control': 'no-cache' },
+      });
     });
   }
 

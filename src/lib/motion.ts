@@ -42,6 +42,8 @@ const state = {
   initialized: false,
 };
 
+const MAX_PRELOADED_FRAMES = 360;
+
 const isReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const isTouchDevice = () =>
@@ -115,22 +117,35 @@ const ensureCinemaFrames = async () => {
   if (framesManifest.count <= 0) return;
 
   state.cinemaLoadPromise = (async () => {
-    const candidates = Array.from({ length: framesManifest.count }, (_, i) => i + 1);
+    const total = framesManifest.count;
+    const candidates =
+      total <= MAX_PRELOADED_FRAMES
+        ? Array.from({ length: total }, (_, i) => i + 1)
+        : Array.from({ length: MAX_PRELOADED_FRAMES }, (_, i) =>
+            Math.round(1 + (i * (total - 1)) / (MAX_PRELOADED_FRAMES - 1)),
+          );
 
-    const loaded = await Promise.all(
+    const loaded = new Array<HTMLImageElement | null>(candidates.length).fill(null);
+
+    await Promise.all(
       candidates.map(
-        (n) =>
-          new Promise<HTMLImageElement | null>((resolve) => {
+        (n, idx) =>
+          new Promise<void>((resolve) => {
             const img = new Image();
             img.decoding = 'async';
-            img.onload = () => resolve(img);
-            img.onerror = () => resolve(null);
+            img.onload = () => {
+              loaded[idx] = img;
+              state.cinema.images = loaded.filter((frame): frame is HTMLImageElement => !!frame);
+              if (state.cinema.images.length === 1) {
+                window.dispatchEvent(new Event('scroll'));
+              }
+              resolve();
+            };
+            img.onerror = () => resolve();
             img.src = buildFrameUrl(n);
           }),
       ),
     );
-
-    state.cinema.images = loaded.filter((img): img is HTMLImageElement => !!img);
   })();
 
   await state.cinemaLoadPromise;

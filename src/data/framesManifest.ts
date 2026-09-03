@@ -1,5 +1,5 @@
 export const framesManifest = {
-  count: 1985,
+  count: 240,
   prefix: 'f-',
   pad: 4,
   ext: 'jpg',
