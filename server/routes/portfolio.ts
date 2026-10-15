@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import crypto from 'crypto';
-import { db } from '../db';
-import { requireAdmin } from '../middleware/requireAdmin';
-import { makeUploader, publicUrlFor } from '../upload';
+import { db } from '../db.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
+import { makeUploader } from '../upload.js';
 
 export const portfolioRouter = Router();
 const uploader = makeUploader('portfolio', { allowVideo: true, maxFileSizeMb: 250 });
@@ -36,22 +36,22 @@ function toPhoto(row: PortfolioRow) {
   };
 }
 
-portfolioRouter.get('/portfolio', (_req, res) => {
-  const rows = db.prepare('SELECT * FROM portfolio_photos ORDER BY sort_order ASC').all() as PortfolioRow[];
+portfolioRouter.get('/portfolio', async (_req, res) => {
+  const rows = await db.all('SELECT * FROM portfolio_photos ORDER BY sort_order ASC') as PortfolioRow[];
   res.json({ photos: rows.map(toPhoto) });
 });
 
-portfolioRouter.post('/admin/portfolio', requireAdmin, (req, res) => {
+portfolioRouter.post('/admin/portfolio', requireAdmin, async (req, res) => {
   const { title, category, url, description, location, date, cameraInfo, mediaType, credit } = req.body || {};
   if (!title || !category || !url) {
     return res.status(400).json({ error: 'title, category e url são obrigatórios.' });
   }
   const id = crypto.randomUUID();
-  const maxOrder = (db.prepare('SELECT COALESCE(MAX(sort_order), -1) as m FROM portfolio_photos').get() as { m: number }).m;
-  db.prepare(
+  const maxOrder = (await db.get('SELECT COALESCE(MAX(sort_order), -1) as m FROM portfolio_photos') as { m: number }).m;
+  await db.run(
     `INSERT INTO portfolio_photos (id, title, category, url, description, location, date, camera_json, media_type, credit, sort_order)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
+  , 
     id,
     title,
     category,
@@ -64,18 +64,18 @@ portfolioRouter.post('/admin/portfolio', requireAdmin, (req, res) => {
     credit || '',
     maxOrder + 1
   );
-  const row = db.prepare('SELECT * FROM portfolio_photos WHERE id = ?').get(id) as PortfolioRow;
+  const row = await db.get('SELECT * FROM portfolio_photos WHERE id = ?', id) as PortfolioRow;
   res.status(201).json({ photo: toPhoto(row) });
 });
 
-portfolioRouter.put('/admin/portfolio/:id', requireAdmin, (req, res) => {
-  const existing = db.prepare('SELECT * FROM portfolio_photos WHERE id = ?').get(req.params.id) as PortfolioRow | undefined;
+portfolioRouter.put('/admin/portfolio/:id', requireAdmin, async (req, res) => {
+  const existing = await db.get('SELECT * FROM portfolio_photos WHERE id = ?', req.params.id) as PortfolioRow | undefined;
   if (!existing) return res.status(404).json({ error: 'Foto não encontrada.' });
 
   const { title, category, url, description, location, date, cameraInfo, mediaType, credit } = req.body || {};
-  db.prepare(
+  await db.run(
     `UPDATE portfolio_photos SET title = ?, category = ?, url = ?, description = ?, location = ?, date = ?, camera_json = ?, media_type = ?, credit = ? WHERE id = ?`
-  ).run(
+  , 
     title ?? existing.title,
     category ?? existing.category,
     url ?? existing.url,
@@ -87,16 +87,13 @@ portfolioRouter.put('/admin/portfolio/:id', requireAdmin, (req, res) => {
     credit === undefined ? existing.credit : credit,
     req.params.id
   );
-  const row = db.prepare('SELECT * FROM portfolio_photos WHERE id = ?').get(req.params.id) as PortfolioRow;
+  const row = await db.get('SELECT * FROM portfolio_photos WHERE id = ?', req.params.id) as PortfolioRow;
   res.json({ photo: toPhoto(row) });
 });
 
-portfolioRouter.delete('/admin/portfolio/:id', requireAdmin, (req, res) => {
-  db.prepare('DELETE FROM portfolio_photos WHERE id = ?').run(req.params.id);
+portfolioRouter.delete('/admin/portfolio/:id', requireAdmin, async (req, res) => {
+  await db.run('DELETE FROM portfolio_photos WHERE id = ?', req.params.id);
   res.json({ ok: true });
 });
 
-portfolioRouter.post('/admin/portfolio/upload', requireAdmin, uploader.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Nenhuma imagem enviada.' });
-  res.json({ url: publicUrlFor('portfolio', req.file.filename) });
-});
+portfolioRouter.post('/admin/portfolio/upload', requireAdmin, uploader);

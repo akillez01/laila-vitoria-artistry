@@ -1,26 +1,23 @@
 import { Router } from 'express';
-import { db } from '../db';
-import { requireAdmin, type AuthedRequest } from '../middleware/requireAdmin';
-import { makeUploader, publicUrlFor } from '../upload';
+import { db } from '../db.js';
+import { requireAdmin, type AuthedRequest } from '../middleware/requireAdmin.js';
+import { makeUploader } from '../upload.js';
 
 export const adminProfileRouter = Router();
 const avatarUploader = makeUploader('avatars');
 
-adminProfileRouter.post('/admin/profile/avatar', requireAdmin, avatarUploader.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Nenhuma imagem enviada.' });
-  res.json({ url: publicUrlFor('avatars', req.file.filename) });
-});
+adminProfileRouter.post('/admin/profile/avatar', requireAdmin, avatarUploader);
 
 // Público: usado pela home para exibir o widget de Instagram ao vivo, se configurado.
-adminProfileRouter.get('/site-settings', (_req, res) => {
-  const row = db.prepare('SELECT instagram_widget_url FROM admins ORDER BY id ASC LIMIT 1').get() as
+adminProfileRouter.get('/site-settings', async (_req, res) => {
+  const row = await db.get('SELECT instagram_widget_url FROM admins ORDER BY id ASC LIMIT 1') as
     | { instagram_widget_url: string }
     | undefined;
   res.json({ instagramWidgetUrl: row?.instagram_widget_url || '' });
 });
 
-adminProfileRouter.patch('/admin/profile', requireAdmin, (req: AuthedRequest, res) => {
-  const existing = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.adminId) as
+adminProfileRouter.patch('/admin/profile', requireAdmin, async (req: AuthedRequest, res) => {
+  const existing = await db.get('SELECT * FROM admins WHERE id = ?', req.adminId) as
     | Record<string, any>
     | undefined;
   if (!existing) return res.status(404).json({ error: 'Admin não encontrado.' });
@@ -28,13 +25,13 @@ adminProfileRouter.patch('/admin/profile', requireAdmin, (req: AuthedRequest, re
   const { name, email, whatsapp, studioAddress, avatarUrl, instagramHandle, instagramWidgetUrl, bio, notifications } =
     req.body || {};
 
-  db.prepare(
+  await db.run(
     `UPDATE admins SET
       name = ?, email = ?, whatsapp = ?, studio_address = ?, avatar_url = ?, instagram_handle = ?,
       instagram_widget_url = ?, bio = ?,
       notify_new_orders = ?, notify_payment_alerts = ?, notify_weekly_summary = ?
      WHERE id = ?`
-  ).run(
+  , 
     name ?? existing.name,
     email ?? existing.email,
     whatsapp ?? existing.whatsapp,
@@ -49,7 +46,7 @@ adminProfileRouter.patch('/admin/profile', requireAdmin, (req: AuthedRequest, re
     req.adminId
   );
 
-  const row = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.adminId) as Record<string, any>;
+  const row = await db.get('SELECT * FROM admins WHERE id = ?', req.adminId) as Record<string, any>;
   res.json({
     profile: {
       id: row.id,

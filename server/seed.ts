@@ -1,44 +1,37 @@
 import 'dotenv/config';
-import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { db } from './db';
-import { hashPassword } from './auth';
+import { db, initDb } from './db.js';
+import { putLocalFile } from './upload.js';
+import { hashPassword } from './auth.js';
 
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'contato@lailavitoria.com';
 const SEED_IMG_SRC = path.resolve(process.cwd(), 'src/assets/img');
-const SEED_IMG_DEST = path.resolve(process.cwd(), 'uploads/seed');
 const ALBUM_IMG_SRC = path.resolve(process.cwd(), 'src/assets/img/album');
 
 function generatePassword(): string {
   return crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 12) + '!A1';
 }
 
-function copySeedImage(filename: string): string {
-  fs.mkdirSync(SEED_IMG_DEST, { recursive: true });
-  const src = path.join(SEED_IMG_SRC, filename);
+async function copySeedImage(filename: string): Promise<string> {
   const destName = filename.replace(/\s+/g, '-').toLowerCase();
-  const dest = path.join(SEED_IMG_DEST, destName);
-  if (fs.existsSync(src)) {
-    fs.copyFileSync(src, dest);
-  }
-  return `/uploads/seed/${destName}`;
+  return putLocalFile(`seed/${destName}`, path.join(SEED_IMG_SRC, filename), 'image/jpeg');
 }
 
-function seedAdmin() {
-  const existing = db.prepare('SELECT id FROM admins WHERE email = ?').get(ADMIN_EMAIL);
+async function seedAdmin() {
+  const existing = await db.get('SELECT id FROM admins WHERE email = ?', ADMIN_EMAIL);
   if (existing) {
     console.log(`Admin já existe (${ADMIN_EMAIL}), pulando criação.`);
     return null;
   }
 
   const password = generatePassword();
-  const avatarUrl = copySeedImage('Laila 2026-08-02 at 09.37.53.jpeg');
+  const avatarUrl = await copySeedImage('Laila 2026-08-02 at 09.37.53.jpeg');
 
-  db.prepare(
+  await db.run(
     `INSERT INTO admins (name, email, password_hash, whatsapp, studio_address, role, avatar_url, instagram_handle)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
+  , 
     'Laila Vitória',
     ADMIN_EMAIL,
     hashPassword(password),
@@ -52,8 +45,8 @@ function seedAdmin() {
   return { email: ADMIN_EMAIL, password };
 }
 
-function seedPackages() {
-  const count = (db.prepare('SELECT COUNT(*) as c FROM packages').get() as { c: number }).c;
+async function seedPackages() {
+  const count = (await db.get('SELECT COUNT(*) as c FROM packages') as { c: number }).c;
   if (count > 0) {
     console.log('Pacotes já existem, pulando seed.');
     return;
@@ -86,24 +79,24 @@ function seedPackages() {
     },
   ];
 
-  const insert = db.prepare(
-    'INSERT INTO packages (name, description, price_cents, category, sort_order) VALUES (?, ?, ?, ?, ?)'
-  );
-  packages.forEach((p, i) => insert.run(p.name, p.description, p.price_cents, p.category, i));
+  const insert = 'INSERT INTO packages (name, description, price_cents, category, sort_order) VALUES (?, ?, ?, ?, ?)';
+  for (const [i, p] of packages.entries()) {
+    await db.run(insert, p.name, p.description, p.price_cents, p.category, i);
+  }
 }
 
-function seedGalleries() {
-  const count = (db.prepare('SELECT COUNT(*) as c FROM client_galleries').get() as { c: number }).c;
+async function seedGalleries() {
+  const count = (await db.get('SELECT COUNT(*) as c FROM client_galleries') as { c: number }).c;
   if (count > 0) {
     console.log('Galerias já existem, pulando seed.');
     return;
   }
 
-  const weddingCover = copySeedImage('reiane 2026-08-02 at 09.37.52.jpeg');
-  const portraitCover = copySeedImage('Laila 2026-08-02 at 09.37.53.jpeg');
-  const fashionCover = copySeedImage('laila2 2026-08-02 at 09.37.53.jpeg');
-  const culturaCover = copySeedImage('WhatsApp Image 2026-08-02 at 09.37.51.jpeg');
-  const heroImg = copySeedImage('WhatsApp Image 2026-08-02 at 09.37.52.jpeg');
+  const weddingCover = await copySeedImage('reiane 2026-08-02 at 09.37.52.jpeg');
+  const portraitCover = await copySeedImage('Laila 2026-08-02 at 09.37.53.jpeg');
+  const fashionCover = await copySeedImage('laila2 2026-08-02 at 09.37.53.jpeg');
+  const culturaCover = await copySeedImage('WhatsApp Image 2026-08-02 at 09.37.51.jpeg');
+  const heroImg = await copySeedImage('WhatsApp Image 2026-08-02 at 09.37.52.jpeg');
 
   const galleries = [
     {
@@ -165,34 +158,24 @@ function seedGalleries() {
     },
   ];
 
-  const insertGallery = db.prepare(
-    `INSERT INTO client_galleries (code, client_name, event_type, event_date, cover_image, max_selections, drive_link)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
-  );
-  const insertPhoto = db.prepare(
-    'INSERT INTO gallery_photos (id, gallery_id, url, title, selected, note, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  );
+  const insertGallery = `INSERT INTO client_galleries (code, client_name, event_type, event_date, cover_image, max_selections, drive_link)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`;
+  const insertPhoto = 'INSERT INTO gallery_photos (id, gallery_id, url, title, selected, note, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
   for (const g of galleries) {
-    const info = insertGallery.run(g.code, g.clientName, g.eventType, g.eventDate, g.coverImage, g.maxSelections, g.driveLink);
-    g.photos.forEach((p, i) => {
-      insertPhoto.run(crypto.randomUUID(), info.lastInsertRowid, p.url, p.title, p.selected, p.note, i);
-    });
+    const info = await db.run(insertGallery, g.code, g.clientName, g.eventType, g.eventDate, g.coverImage, g.maxSelections, g.driveLink);
+    for (const [i, p] of g.photos.entries()) {
+      await db.run(insertPhoto, crypto.randomUUID(), info.lastInsertRowid, p.url, p.title, p.selected, p.note, i);
+    }
   }
 }
 
-function copyAlbumSeedImage(filename: string): string {
-  fs.mkdirSync(SEED_IMG_DEST, { recursive: true });
-  const src = path.join(ALBUM_IMG_SRC, filename);
-  const dest = path.join(SEED_IMG_DEST, filename);
-  if (fs.existsSync(src)) {
-    fs.copyFileSync(src, dest);
-  }
-  return `/uploads/seed/${filename}`;
+async function copyAlbumSeedImage(filename: string): Promise<string> {
+  return putLocalFile(`seed/${filename}`, path.join(ALBUM_IMG_SRC, filename), 'image/jpeg');
 }
 
-function seedAlbum() {
-  const count = (db.prepare('SELECT COUNT(*) as c FROM album_images').get() as { c: number }).c;
+async function seedAlbum() {
+  const count = (await db.get('SELECT COUNT(*) as c FROM album_images') as { c: number }).c;
   if (count > 0) {
     console.log('Álbum já existe, pulando seed.');
     return;
@@ -213,27 +196,25 @@ function seedAlbum() {
     { file: 'andor-cirio-flores.jpeg', title: 'Detalhe Floral do Andor', description: 'Close-up do andor ricamente decorado, capturando o brilho dourado e a devoção do Círio.' },
   ];
 
-  const insert = db.prepare(
-    'INSERT INTO album_images (id, title, description, url, sort_order) VALUES (?, ?, ?, ?, ?)'
-  );
-  images.forEach((img, i) => {
-    const url = copyAlbumSeedImage(img.file);
-    insert.run(crypto.randomUUID(), img.title, img.description, url, i);
-  });
+  const insert = 'INSERT INTO album_images (id, title, description, url, sort_order) VALUES (?, ?, ?, ?, ?)';
+  for (const [i, img] of images.entries()) {
+    const url = await copyAlbumSeedImage(img.file);
+    await db.run(insert, crypto.randomUUID(), img.title, img.description, url, i);
+  }
 }
 
-function seedPortfolio() {
-  const count = (db.prepare('SELECT COUNT(*) as c FROM portfolio_photos').get() as { c: number }).c;
+async function seedPortfolio() {
+  const count = (await db.get('SELECT COUNT(*) as c FROM portfolio_photos') as { c: number }).c;
   if (count > 0) {
     console.log('Portfólio já existe, pulando seed.');
     return;
   }
 
-  const culturaCover = copySeedImage('WhatsApp Image 2026-08-02 at 09.37.51.jpeg');
-  const boyMaracas = copySeedImage('WhatsApp Image 2026-08-02 at 09.37.52.jpeg');
-  const raianeEditorial = copySeedImage('reiane 2026-08-02 at 09.37.52.jpeg');
-  const lailaReal = copySeedImage('Laila 2026-08-02 at 09.37.53.jpeg');
-  const lailaAction = copySeedImage('laila2 2026-08-02 at 09.37.53.jpeg');
+  const culturaCover = await copySeedImage('WhatsApp Image 2026-08-02 at 09.37.51.jpeg');
+  const boyMaracas = await copySeedImage('WhatsApp Image 2026-08-02 at 09.37.52.jpeg');
+  const raianeEditorial = await copySeedImage('reiane 2026-08-02 at 09.37.52.jpeg');
+  const lailaReal = await copySeedImage('Laila 2026-08-02 at 09.37.53.jpeg');
+  const lailaAction = await copySeedImage('laila2 2026-08-02 at 09.37.53.jpeg');
 
   const photos = [
     { id: 'cult-1', title: 'Obra Editorial Destaque — Raiane em São João da Gente', category: 'cultura', url: raianeEditorial, description: 'Registro autoral e vibrante de Raiane na apresentação junina São João da Gente.', location: 'Palco Principal, Manaus - AM', date: 'Julho 2024' },
@@ -245,19 +226,20 @@ function seedPortfolio() {
     { id: 'fash-1', title: 'Essência Folclórica Amazônica', category: 'moda', url: culturaCover, description: 'Ensaio editorial com foco no design de indumentárias nativas.', location: 'Teatro Amazonas, Manaus', date: 'Maio 2024' },
   ];
 
-  const insert = db.prepare(
-    `INSERT INTO portfolio_photos (id, title, category, url, description, location, date, sort_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-  photos.forEach((p, i) => insert.run(p.id, p.title, p.category, p.url, p.description, p.location, p.date, i));
+  const insert = `INSERT INTO portfolio_photos (id, title, category, url, description, location, date, sort_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+  for (const [i, p] of photos.entries()) {
+    await db.run(insert, p.id, p.title, p.category, p.url, p.description, p.location, p.date, i);
+  }
 }
 
-function main() {
-  const credentials = seedAdmin();
-  seedPackages();
-  seedGalleries();
-  seedPortfolio();
-  seedAlbum();
+async function main() {
+  await initDb();
+  const credentials = await seedAdmin();
+  await seedPackages();
+  await seedGalleries();
+  await seedPortfolio();
+  await seedAlbum();
 
   console.log('\n✅ Seed concluído.');
   if (credentials) {
@@ -268,4 +250,7 @@ function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

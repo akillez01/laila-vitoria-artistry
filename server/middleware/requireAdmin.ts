@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { getAdminIdFromRequest } from '../auth';
+import { getAdminIdFromRequest } from '../auth.js';
 
 export interface AuthedRequest extends Request {
   adminId?: number;

@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import crypto from 'crypto';
-import { db } from '../db';
-import { requireAdmin } from '../middleware/requireAdmin';
-import { makeUploader, publicUrlFor } from '../upload';
+import { db } from '../db.js';
+import { requireAdmin } from '../middleware/requireAdmin.js';
+import { makeUploader } from '../upload.js';
 
 export const albumsRouter = Router();
 const uploader = makeUploader('albums');
@@ -24,46 +24,43 @@ function toImage(row: AlbumRow) {
   };
 }
 
-albumsRouter.get('/albums', (_req, res) => {
-  const rows = db.prepare('SELECT * FROM album_images ORDER BY sort_order ASC').all() as AlbumRow[];
+albumsRouter.get('/albums', async (_req, res) => {
+  const rows = await db.all('SELECT * FROM album_images ORDER BY sort_order ASC') as AlbumRow[];
   res.json({ images: rows.map(toImage) });
 });
 
-albumsRouter.post('/admin/albums', requireAdmin, (req, res) => {
+albumsRouter.post('/admin/albums', requireAdmin, async (req, res) => {
   const { title, url, description } = req.body || {};
   if (!title || !url) {
     return res.status(400).json({ error: 'title e url são obrigatórios.' });
   }
   const id = crypto.randomUUID();
-  const maxOrder = (db.prepare('SELECT COALESCE(MAX(sort_order), -1) as m FROM album_images').get() as { m: number }).m;
-  db.prepare(
+  const maxOrder = (await db.get('SELECT COALESCE(MAX(sort_order), -1) as m FROM album_images') as { m: number }).m;
+  await db.run(
     `INSERT INTO album_images (id, title, description, url, sort_order) VALUES (?, ?, ?, ?, ?)`
-  ).run(id, title, description || '', url, maxOrder + 1);
-  const row = db.prepare('SELECT * FROM album_images WHERE id = ?').get(id) as AlbumRow;
+  , id, title, description || '', url, maxOrder + 1);
+  const row = await db.get('SELECT * FROM album_images WHERE id = ?', id) as AlbumRow;
   res.status(201).json({ image: toImage(row) });
 });
 
-albumsRouter.put('/admin/albums/:id', requireAdmin, (req, res) => {
-  const existing = db.prepare('SELECT * FROM album_images WHERE id = ?').get(req.params.id) as AlbumRow | undefined;
+albumsRouter.put('/admin/albums/:id', requireAdmin, async (req, res) => {
+  const existing = await db.get('SELECT * FROM album_images WHERE id = ?', req.params.id) as AlbumRow | undefined;
   if (!existing) return res.status(404).json({ error: 'Imagem não encontrada.' });
 
   const { title, url, description } = req.body || {};
-  db.prepare('UPDATE album_images SET title = ?, description = ?, url = ? WHERE id = ?').run(
+  await db.run('UPDATE album_images SET title = ?, description = ?, url = ? WHERE id = ?', 
     title ?? existing.title,
     description ?? existing.description,
     url ?? existing.url,
     req.params.id
   );
-  const row = db.prepare('SELECT * FROM album_images WHERE id = ?').get(req.params.id) as AlbumRow;
+  const row = await db.get('SELECT * FROM album_images WHERE id = ?', req.params.id) as AlbumRow;
   res.json({ image: toImage(row) });
 });
 
-albumsRouter.delete('/admin/albums/:id', requireAdmin, (req, res) => {
-  db.prepare('DELETE FROM album_images WHERE id = ?').run(req.params.id);
+albumsRouter.delete('/admin/albums/:id', requireAdmin, async (req, res) => {
+  await db.run('DELETE FROM album_images WHERE id = ?', req.params.id);
   res.json({ ok: true });
 });
 
-albumsRouter.post('/admin/albums/upload', requireAdmin, uploader.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Nenhuma imagem enviada.' });
-  res.json({ url: publicUrlFor('albums', req.file.filename) });
-});
+albumsRouter.post('/admin/albums/upload', requireAdmin, uploader);

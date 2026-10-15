@@ -1,0 +1,5 @@
+data/
+uploads/
+dist/
+*.zip
+app.js

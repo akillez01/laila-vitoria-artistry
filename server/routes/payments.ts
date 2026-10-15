@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import QRCode from 'qrcode';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
-import { db } from '../db';
-import { toOrder, type OrderRow } from './orders';
-import { buildPixPayload } from '../pix';
+import { db } from '../db.js';
+import { toOrder, type OrderRow } from './orders.js';
+import { buildPixPayload } from '../pix.js';
 
 export const paymentsRouter = Router();
 
@@ -20,11 +20,11 @@ paymentsRouter.post('/payments/preference', async (req, res) => {
   const { orderId } = req.body || {};
   if (!orderId) return res.status(400).json({ error: 'orderId é obrigatório.' });
 
-  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as OrderRow | undefined;
+  const order = await db.get('SELECT * FROM orders WHERE id = ?', orderId) as OrderRow | undefined;
   if (!order) return res.status(404).json({ error: 'Pedido não encontrado.' });
   if (order.status === 'approved') return res.status(409).json({ error: 'Pedido já foi pago.' });
 
-  const pkg = db.prepare('SELECT name FROM packages WHERE id = ?').get(order.package_id) as
+  const pkg = await db.get('SELECT name FROM packages WHERE id = ?', order.package_id) as
     | { name: string }
     | undefined;
 
@@ -59,7 +59,7 @@ paymentsRouter.post('/payments/preference', async (req, res) => {
       },
     });
 
-    db.prepare('UPDATE orders SET mp_preference_id = ? WHERE id = ?').run(result.id, order.id);
+    await db.run('UPDATE orders SET mp_preference_id = ? WHERE id = ?', result.id, order.id);
 
     res.json({
       preferenceId: result.id,
@@ -82,11 +82,11 @@ paymentsRouter.post('/payments/pix', async (req, res) => {
     return res.status(500).json({ error: 'Chave Pix não configurada.' });
   }
 
-  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId) as OrderRow | undefined;
+  const order = await db.get('SELECT * FROM orders WHERE id = ?', orderId) as OrderRow | undefined;
   if (!order) return res.status(404).json({ error: 'Pedido não encontrado.' });
   if (order.status === 'approved') return res.status(409).json({ error: 'Pedido já foi pago.' });
 
-  const pkg = db.prepare('SELECT name FROM packages WHERE id = ?').get(order.package_id) as
+  const pkg = await db.get('SELECT name FROM packages WHERE id = ?', order.package_id) as
     | { name: string }
     | undefined;
 
@@ -102,7 +102,7 @@ paymentsRouter.post('/payments/pix', async (req, res) => {
 
     const qrCodeDataUrl = await QRCode.toDataURL(payload, { margin: 1, width: 320 });
 
-    db.prepare("UPDATE orders SET payment_method = COALESCE(payment_method, 'pix_estatico') WHERE id = ?").run(order.id);
+    await db.run("UPDATE orders SET payment_method = COALESCE(payment_method, 'pix_estatico') WHERE id = ?", order.id);
 
     res.json({ payload, qrCodeDataUrl });
   } catch (err: any) {
@@ -133,9 +133,9 @@ paymentsRouter.post('/payments/webhook', async (req, res) => {
     const installments = typeof result.installments === 'number' ? result.installments : null;
     const paidAt = status === 'approved' ? new Date().toISOString() : null;
 
-    db.prepare(
+    await db.run(
       `UPDATE orders SET status = ?, payment_method = ?, mp_payment_id = ?, installments = COALESCE(?, installments), paid_at = COALESCE(?, paid_at) WHERE id = ?`
-    ).run(status, paymentMethod, String(result.id), installments, paidAt, orderId);
+    , status, paymentMethod, String(result.id), installments, paidAt, orderId);
 
     res.status(200).send('ok');
   } catch (err: any) {

@@ -1,10 +1,48 @@
-import multer, { StorageEngine } from 'multer';
 import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
-import sharp from 'sharp';
+import type { Request, Response } from 'express';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-export const UPLOADS_ROOT = path.resolve(process.cwd(), 'uploads');
+// Arquivos ficam no Cloudflare R2 (API compatível com S3). O navegador envia o arquivo
+// direto para o R2 usando uma URL pré-assinada — o arquivo nunca passa pela função da
+// Vercel (que tem limite de 4,5MB por requisição). Fotos JPEG/PNG são redimensionadas
+// no navegador antes do envio (ver src/lib/api.ts).
+
+let s3: S3Client | null = null;
+export function getS3(): S3Client {
+  if (!s3) {
+    const accountId = process.env.R2_ACCOUNT_ID;
+    if (!accountId || !process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY) {
+      throw new Error('Credenciais do R2 não configuradas (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY).');
+    }
+    s3 = new S3Client({
+      region: 'auto',
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+      },
+    });
+  }
+  return s3;
+}
+
+export function bucket(): string {
+  const name = process.env.R2_BUCKET;
+  if (!name) throw new Error('R2_BUCKET não configurado.');
+  return name;
+}
+
+export function publicBaseUrl(): string {
+  const base = process.env.R2_PUBLIC_URL;
+  if (!base) throw new Error('R2_PUBLIC_URL não configurado.');
+  return base.replace(/\/$/, '');
+}
+
+export function publicUrlFor(key: string): string {
+  return `${publicBaseUrl()}/${key}`;
+}
 
 const extForMimeType: Record<string, string> = {
   'image/jpeg': '.jpg',
@@ -16,68 +54,57 @@ const extForMimeType: Record<string, string> = {
   'video/webm': '.webm',
 };
 
-// Photos coming straight off a phone/camera routinely land at 4000px+ and several
-// MB each; nothing in this app displays them anywhere near that size, so every
-// JPEG/PNG upload is downscaled and recompressed on the way to disk. GIF/WebP/video
-// pass through untouched (GIF may be animated; WebP/video re-encoding needs a
-// different pipeline than sharp's still-image one).
-const MAX_DIMENSION = 2000;
-const JPEG_QUALITY = 82;
-
-function createOptimizedDiskStorage(dest: string): StorageEngine {
-  return {
-    _handleFile(_req, file, cb) {
-      const ext = extForMimeType[file.mimetype] || '';
-      const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`;
-      const finalPath = path.join(dest, filename);
-      const outStream = fs.createWriteStream(finalPath);
-      outStream.on('error', cb);
-      outStream.on('finish', () =>
-        cb(null, { destination: dest, filename, path: finalPath, size: outStream.bytesWritten }),
-      );
-
-      const isResizableImage = file.mimetype === 'image/jpeg' || file.mimetype === 'image/png';
-      const source: NodeJS.ReadableStream = isResizableImage
-        ? file.stream.pipe(
-            sharp()
-              .rotate()
-              .resize({ width: MAX_DIMENSION, height: MAX_DIMENSION, fit: 'inside', withoutEnlargement: true })
-              .toFormat(file.mimetype === 'image/png' ? 'png' : 'jpeg', { quality: JPEG_QUALITY }),
-          )
-        : file.stream;
-
-      source.on('error', cb);
-      source.pipe(outStream);
-    },
-    _removeFile(_req, file, cb) {
-      fs.unlink((file as Express.Multer.File).path, cb);
-    },
-  };
-}
-
+// Handler que substitui o antigo upload via multer: recebe { contentType, size } e devolve
+// { uploadUrl, url, mediaType }. O cliente faz PUT do arquivo em uploadUrl.
 export function makeUploader(subdir: string, opts?: { allowVideo?: boolean; maxFileSizeMb?: number }) {
-  const dest = path.join(UPLOADS_ROOT, subdir);
-  fs.mkdirSync(dest, { recursive: true });
-
-  const storage = createOptimizedDiskStorage(dest);
-
   const allowVideo = !!opts?.allowVideo;
   const maxFileSizeMb = opts?.maxFileSizeMb ?? (allowVideo ? 40 : 15);
 
-  return multer({
-    storage,
-    limits: { fileSize: maxFileSizeMb * 1024 * 1024 },
-    fileFilter: (_req, file, cb) => {
-      const isImage = /^image\/(jpeg|png|webp|gif)$/.test(file.mimetype);
-      const isVideo = allowVideo && /^video\/(mp4|quicktime|webm)$/.test(file.mimetype);
-      if (!isImage && !isVideo) {
-        return cb(new Error('Formato de arquivo não suportado.'));
-      }
-      cb(null, true);
-    },
-  });
+  return async (req: Request, res: Response) => {
+    const { contentType, size } = req.body || {};
+    const mime = String(contentType || '');
+    const isImage = /^image\/(jpeg|png|webp|gif)$/.test(mime);
+    const isVideo = allowVideo && /^video\/(mp4|quicktime|webm)$/.test(mime);
+    if (!isImage && !isVideo) {
+      return res.status(400).json({ error: 'Formato de arquivo não suportado.' });
+    }
+    if (!Number.isFinite(size) || size <= 0) {
+      return res.status(400).json({ error: 'Tamanho do arquivo inválido.' });
+    }
+    if (size > maxFileSizeMb * 1024 * 1024) {
+      return res.status(413).json({ error: 'Arquivo excede o tamanho máximo permitido.' });
+    }
+
+    const key = `${subdir}/${Date.now()}-${crypto.randomBytes(6).toString('hex')}${extForMimeType[mime]}`;
+    // Esses cabeçalhos entram na assinatura, então o cliente precisa enviá-los idênticos no PUT.
+    // Nomes são únicos e nunca sobrescritos — seguro cachear para sempre.
+    const headers = { 'Content-Type': mime, 'Cache-Control': 'public, max-age=31536000, immutable' };
+    const uploadUrl = await getSignedUrl(
+      getS3(),
+      new PutObjectCommand({
+        Bucket: bucket(),
+        Key: key,
+        ContentType: headers['Content-Type'],
+        ContentLength: size,
+        CacheControl: headers['Cache-Control'],
+      }),
+      { expiresIn: 15 * 60 },
+    );
+
+    res.json({ uploadUrl, headers, url: publicUrlFor(key), mediaType: isVideo ? 'video' : 'image' });
+  };
 }
 
-export function publicUrlFor(subdir: string, filename: string): string {
-  return `/uploads/${subdir}/${filename}`;
+// Envia um arquivo local para o bucket (usado pelo seed e pela migração de dados).
+export async function putLocalFile(key: string, filePath: string, contentType: string) {
+  await getS3().send(
+    new PutObjectCommand({
+      Bucket: bucket(),
+      Key: key,
+      Body: fs.readFileSync(filePath),
+      ContentType: contentType,
+      CacheControl: 'public, max-age=31536000, immutable',
+    }),
+  );
+  return publicUrlFor(key);
 }

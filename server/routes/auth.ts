@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { db } from '../db';
-import { hashPassword, verifyPassword, signToken, setAuthCookie, clearAuthCookie } from '../auth';
-import { requireAdmin, type AuthedRequest } from '../middleware/requireAdmin';
+import { db } from '../db.js';
+import { hashPassword, verifyPassword, signToken, setAuthCookie, clearAuthCookie } from '../auth.js';
+import { requireAdmin, type AuthedRequest } from '../middleware/requireAdmin.js';
 
 export const authRouter = Router();
 
@@ -42,15 +42,13 @@ function toProfile(row: AdminRow) {
   };
 }
 
-authRouter.post('/login', (req, res) => {
+authRouter.post('/login', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ error: 'Email e senha são obrigatórios.' });
   }
 
-  const row = db
-    .prepare('SELECT * FROM admins WHERE email = ?')
-    .get(String(email).trim().toLowerCase()) as AdminRow | undefined;
+  const row = await db.get('SELECT * FROM admins WHERE email = ?', String(email).trim().toLowerCase()) as AdminRow | undefined;
 
   if (!row || !verifyPassword(password, row.password_hash)) {
     return res.status(401).json({ error: 'Email ou senha inválidos.' });
@@ -61,28 +59,28 @@ authRouter.post('/login', (req, res) => {
   res.json({ profile: toProfile(row) });
 });
 
-authRouter.post('/logout', (_req, res) => {
+authRouter.post('/logout', async (_req, res) => {
   clearAuthCookie(res);
   res.json({ ok: true });
 });
 
-authRouter.get('/me', requireAdmin, (req: AuthedRequest, res) => {
-  const row = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.adminId) as AdminRow | undefined;
+authRouter.get('/me', requireAdmin, async (req: AuthedRequest, res) => {
+  const row = await db.get('SELECT * FROM admins WHERE id = ?', req.adminId) as AdminRow | undefined;
   if (!row) return res.status(404).json({ error: 'Admin não encontrado.' });
   res.json({ profile: toProfile(row) });
 });
 
-authRouter.patch('/password', requireAdmin, (req: AuthedRequest, res) => {
+authRouter.patch('/password', requireAdmin, async (req: AuthedRequest, res) => {
   const { currentPassword, newPassword } = req.body || {};
   if (!currentPassword || !newPassword || String(newPassword).length < 8) {
     return res.status(400).json({ error: 'Senha atual e nova senha (mín. 8 caracteres) são obrigatórias.' });
   }
 
-  const row = db.prepare('SELECT * FROM admins WHERE id = ?').get(req.adminId) as AdminRow | undefined;
+  const row = await db.get('SELECT * FROM admins WHERE id = ?', req.adminId) as AdminRow | undefined;
   if (!row || !verifyPassword(currentPassword, row.password_hash)) {
     return res.status(401).json({ error: 'Senha atual incorreta.' });
   }
 
-  db.prepare('UPDATE admins SET password_hash = ? WHERE id = ?').run(hashPassword(newPassword), row.id);
+  await db.run('UPDATE admins SET password_hash = ? WHERE id = ?', hashPassword(newPassword), row.id);
   res.json({ ok: true });
 });

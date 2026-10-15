@@ -1,13 +1,14 @@
 import 'dotenv/config';
 import crypto from 'crypto';
-import { db } from './db';
-import { hashPassword } from './auth';
+import { db, initDb } from './db.js';
+import { hashPassword } from './auth.js';
 
 function generatePassword(): string {
   return crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 12) + '!A1';
 }
 
-function main() {
+async function main() {
+  await initDb();
   const [, , email, name, role] = process.argv;
   if (!email || !name) {
     console.error('Uso: npm run create-admin -- <email> "<nome>" ["<cargo>"]');
@@ -15,19 +16,19 @@ function main() {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
-  const existing = db.prepare('SELECT id FROM admins WHERE email = ?').get(normalizedEmail);
+  const existing = await db.get('SELECT id FROM admins WHERE email = ?', normalizedEmail);
   if (existing) {
     console.error(`Já existe um admin com o email ${normalizedEmail}.`);
     process.exit(1);
   }
 
-  const reference = db.prepare('SELECT * FROM admins ORDER BY id ASC LIMIT 1').get() as any;
+  const reference = await db.get('SELECT * FROM admins ORDER BY id ASC LIMIT 1') as any;
   const password = generatePassword();
 
-  db.prepare(
+  await db.run(
     `INSERT INTO admins (name, email, password_hash, whatsapp, studio_address, role, avatar_url, instagram_handle)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
+  , 
     name,
     normalizedEmail,
     hashPassword(password),
@@ -45,4 +46,7 @@ function main() {
   console.log('======================================================\n');
 }
 
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
