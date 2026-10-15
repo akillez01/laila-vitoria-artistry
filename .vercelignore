@@ -1,5 +1,6 @@
-data/
-uploads/
-dist/
+/data/
+/uploads/
+/dist/
 *.zip
-app.js
+/app.js
+/.env*
