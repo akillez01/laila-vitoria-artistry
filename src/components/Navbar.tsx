@@ -47,8 +47,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             className={`text-[10px] xl:text-xs font-bold uppercase tracking-widest pb-1 transition-all ${currentView === 'portfolio'
-                ? 'text-neutral-900 dark:text-emerald-400 border-b-2 border-neutral-900 dark:border-emerald-400'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              ? 'text-neutral-900 dark:text-emerald-400 border-b-2 border-neutral-900 dark:border-emerald-400'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
               }`}
           >
             Início
@@ -60,8 +60,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             className={`text-[10px] xl:text-xs font-bold uppercase tracking-widest pb-1 transition-all ${currentView === 'album'
-                ? 'text-neutral-900 dark:text-emerald-400 border-b-2 border-neutral-900 dark:border-emerald-400'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              ? 'text-neutral-900 dark:text-emerald-400 border-b-2 border-neutral-900 dark:border-emerald-400'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
               }`}
           >
             Álbuns
@@ -91,8 +91,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             onClick={() => onNavigate('profile')}
             className={`text-[10px] xl:text-xs font-bold uppercase tracking-widest pb-1 transition-all flex items-center gap-1.5 ${currentView === 'profile'
-                ? 'text-neutral-900 dark:text-emerald-400 border-b-2 border-neutral-900 dark:border-emerald-400'
-                : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              ? 'text-neutral-900 dark:text-emerald-400 border-b-2 border-neutral-900 dark:border-emerald-400'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
               }`}
           >
             <User className="w-3 h-3 xl:w-3.5 xl:h-3.5" />
@@ -101,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Right Action Controls */}
-        <div className="hidden sm:flex items-center gap-2.5">
+        <div className="hidden lg:flex items-center gap-2.5">
           {/* Instagram Link */}
           <a
             href={INSTAGRAM_URL}
@@ -235,7 +235,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
             className="text-left text-sm font-semibold uppercase tracking-wider py-2.5 text-neutral-700 dark:text-neutral-300 border-b border-neutral-200 dark:border-neutral-800/60"
           >
-            Sobre a Fotógrafa Laila
+            Sobre a Fotógrafa Layla
           </button>
 
           <button

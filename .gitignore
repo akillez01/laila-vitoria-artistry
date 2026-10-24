@@ -8,3 +8,9 @@ coverage/
 !.env.example
 /data/
 /uploads/
+.vercel
+/video/
+/.agents/
+/.claude/
+/.taste-skill/
+*.zip

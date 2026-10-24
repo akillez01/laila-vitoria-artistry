@@ -4,6 +4,11 @@ import { api, ApiError } from '../lib/api';
 import { Package } from '../types';
 import { PaymentOptions } from './PaymentOptions';
 
+const formatPrice = (priceCents: number) => new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+}).format(priceCents / 100);
+
 export const PricingSection: React.FC = () => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [checkoutPackage, setCheckoutPackage] = useState<Package | null>(null);
@@ -18,15 +23,12 @@ export const PricingSection: React.FC = () => {
 
   return (
     <section
-      className="bg-neutral-50 dark:bg-[#121315] border-y border-neutral-200 dark:border-neutral-800 py-16 transition-colors duration-300"
+      className="bg-neutral-50 dark:bg-[#121315] py-16 transition-colors duration-300"
       id="pricing"
       data-motion="reveal"
     >
       <div className="max-w-[1440px] mx-auto px-5 sm:px-8 md:px-16">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs uppercase tracking-[0.25em] text-amber-600 dark:text-amber-400 font-bold block mb-1">
-            Investimento
-          </span>
           <h2 className="font-playfair text-3xl sm:text-4xl text-neutral-900 dark:text-white mb-4 font-bold tracking-tight">
             Coleções & Pacotes
           </h2>
@@ -43,7 +45,8 @@ export const PricingSection: React.FC = () => {
               data-motion="reveal"
             >
               <h3 className="font-playfair text-lg font-bold text-neutral-900 dark:text-white mb-2">{pkg.name}</h3>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed flex-1 mb-4">
+              <p className="editorial-package-price">{formatPrice(pkg.priceCents)}</p>
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed flex-1 mb-4">
                 {pkg.description}
               </p>
               <button

@@ -1,7 +1,7 @@
+import { Instagram, Mail, MapPin, Phone } from 'lucide-react';
 import React from 'react';
-import { Mail, Phone, MapPin, Instagram, MessageCircle } from 'lucide-react';
+import { INSTAGRAM_HANDLE, INSTAGRAM_URL, WHATSAPP_LINK, WHATSAPP_PHONE } from '../data/photographyData';
 import { BrandLogo } from './BrandLogo';
-import { INSTAGRAM_URL, INSTAGRAM_HANDLE, WHATSAPP_LINK, WHATSAPP_PHONE } from '../data/photographyData';
 
 interface FooterProps {
   onNavigate: (view: 'portfolio' | 'profile') => void;
@@ -11,16 +11,16 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenContact, onScrollToSection }) => {
   return (
-    <footer className="bg-white dark:bg-[#121315] w-full border-t border-neutral-200 dark:border-neutral-800 mt-auto transition-colors duration-300">
+    <footer className="bg-white dark:bg-[#121315] w-full mt-auto transition-colors duration-300">
       <div className="w-full py-12 px-5 sm:px-8 md:px-16 flex flex-col lg:flex-row justify-between items-start lg:items-center max-w-[1440px] mx-auto gap-8">
         {/* Left: Address & Contact */}
         <div className="text-sm text-neutral-600 dark:text-neutral-400 order-3 lg:order-1 flex flex-col gap-2 max-w-md">
           <p className="font-bold text-neutral-900 dark:text-white">© 2024 Layla Vitória Artistry • Fotografia Autoral</p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 flex items-start gap-1.5 leading-relaxed">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 flex items-start gap-1.5 leading-relaxed">
             <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-500 mt-0.5" />
             Rua Francisco Nobre Pontes, 04, Quadra 26 - Planalto, CEP: 69044-110, Manaus - AM
           </p>
-          <div className="flex flex-wrap items-center gap-4 text-xs pt-1 font-medium">
+          <div className="flex flex-wrap items-center gap-4 text-sm pt-1 font-medium">
             <a href="mailto:laaylalopezz@gmail.com" className="hover:text-neutral-900 dark:hover:text-amber-400 transition-colors flex items-center gap-1.5">
               <Mail className="w-3.5 h-3.5 text-amber-500" /> laaylalopezz@gmail.com
             </a>
@@ -44,8 +44,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenContact, onScr
           >
             <BrandLogo variant="full" size="lg" />
           </button>
-          <span className="text-[10px] uppercase tracking-[0.25em] font-semibold text-amber-600 dark:text-amber-400">
-            Fotografia Autoral • Manaus, AM
+          <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+            Fotografia autoral em Manaus, AM
           </span>
         </div>
 

@@ -69,7 +69,7 @@ export const ClientAccessSection: React.FC<ClientAccessSectionProps> = ({ onUnlo
 
   return (
     <section
-      className="bg-white dark:bg-[#181a1d] border-t border-neutral-200 dark:border-neutral-800 py-16 text-center transition-colors duration-300"
+      className="bg-white dark:bg-[#181a1d] py-16 text-center transition-colors duration-300"
       id="client-access"
       data-motion="reveal"
     >
@@ -78,9 +78,6 @@ export const ClientAccessSection: React.FC<ClientAccessSectionProps> = ({ onUnlo
           <Lock className="w-8 h-8 stroke-[1.75]" />
         </div>
 
-        <span className="text-xs uppercase tracking-[0.25em] text-amber-600 dark:text-amber-400 font-bold block mb-1">
-          Proofing Privado & Seleção
-        </span>
         <h2 className="font-playfair text-3xl sm:text-4xl text-neutral-900 dark:text-white mb-4 font-bold tracking-tight">
           Área Exclusiva do Cliente
         </h2>
@@ -97,7 +94,7 @@ export const ClientAccessSection: React.FC<ClientAccessSectionProps> = ({ onUnlo
             }}
             className={`px-4 py-2 rounded transition-colors ${mode === 'code'
                 ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-sm'
-                : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                : 'text-neutral-700 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white'
               }`}
           >
             Tenho um código

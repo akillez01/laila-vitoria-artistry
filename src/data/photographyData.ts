@@ -33,6 +33,26 @@ export const INDIGENOUS_DANCE_URL = BOY_MARACAS_DANCER;
 export const ABOUT_PORTRAIT_URL = LAYLA_REAL_PHOTO;
 export const ADMIN_AVATAR_URL = LAYLA_REAL_PHOTO;
 
+const legacySeedPhotos: Record<string, string> = {
+  'reiane-2026-08-02-at-09.37.52.jpeg': INDIGENOUS_PEACOCK_DANCER,
+  'whatsapp-image-2026-08-02-at-09.37.51.jpeg': RAIANE_EDITORIAL_PHOTO,
+  'whatsapp-image-2026-08-02-at-09.37.52.jpeg': BOY_MARACAS_DANCER,
+  'laila-2026-08-02-at-09.37.53.jpeg': LAYLA_REAL_PHOTO,
+  'laila2-2026-08-02-at-09.37.53.jpeg': LAYLA_ACTION_BW_PHOTO,
+};
+
+/** Serve bundled originals for legacy seed URLs whose remote CDN is no longer available. */
+export const resolvePortfolioImageUrl = (url: string): string => {
+  try {
+    const filename = decodeURIComponent(new URL(url, 'https://local.invalid').pathname.split('/').pop() ?? '')
+      .toLowerCase()
+      .replace(/\s+/g, '-');
+    return legacySeedPhotos[filename] ?? url;
+  } catch {
+    return url;
+  }
+};
+
 export const INITIAL_PORTFOLIO: PhotoItem[] = [
   {
     id: 'cult-1',

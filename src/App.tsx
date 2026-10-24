@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { AboutSection } from './components/AboutSection';
 import { AdminLogin } from './components/AdminLogin';
 import { AlbumsView } from './components/AlbumsView';
-import { CinemaOpening } from './components/CinemaOpening';
 import { ClientAccessSection } from './components/ClientAccessSection';
 import { ClientGalleryModal } from './components/ClientGalleryModal';
 import { ContactModal } from './components/ContactModal';
@@ -12,7 +11,7 @@ import { Hero } from './components/Hero';
 import { ImageDirectLinkModal } from './components/ImageDirectLinkModal';
 import { InstagramSection } from './components/InstagramSection';
 import { Navbar } from './components/Navbar';
-import { PortfolioGrid } from './components/PortfolioGrid';
+import { PortfolioGallery } from './components/PortfolioGallery';
 import { PricingSection } from './components/PricingSection';
 import { ProfileAdminView } from './components/ProfileAdminView';
 import { api } from './lib/api';
@@ -43,24 +42,6 @@ export default function App() {
       .catch(() => setAdminProfile(null))
       .finally(() => setAuthChecked(true));
   }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.Motion) return;
-    window.Motion.init({ lerp: 0.09, revealStaggerMs: 70 });
-    window.Motion.start();
-    return () => {
-      window.Motion?.reset();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.Motion) return;
-    window.Motion.reset();
-    window.requestAnimationFrame(() => {
-      window.Motion?.build();
-      window.Motion?.refresh();
-    });
-  }, [currentView]);
 
   // Retorno do checkout do Mercado Pago (?pagamento=sucesso|pendente|falha&pedido=ID):
   // reabre a galeria do cliente direto na tela de status/pagamento do pedido.
@@ -93,7 +74,7 @@ export default function App() {
   const scrollToSection = (sectionId: string) => {
     const el = document.getElementById(sectionId);
     if (el) {
-      window.Motion?.scrollTo(el);
+      el.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
     }
   };
 
@@ -102,7 +83,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f9f9f9] dark:bg-[#0f1012] text-[#1a1c1c] dark:text-white selection:bg-[#e5e2e1] selection:text-[#1c1b1b] transition-colors duration-300">
+    <div className="site-shell min-h-screen flex flex-col bg-[#f9f9f9] dark:bg-[#0f1012] text-[#1a1c1c] dark:text-white selection:bg-[#e5e2e1] selection:text-[#1c1b1b] transition-colors duration-300">
       {/* Navbar (visible on both portfolio and profile views) */}
       <Navbar
         currentView={currentView}
@@ -117,8 +98,6 @@ export default function App() {
       {/* Main View Switching */}
       {currentView === 'portfolio' ? (
         <main className="flex-1">
-          <CinemaOpening onExplore={() => scrollToSection('portfolio')} />
-
           {/* Hero Section */}
           <Hero
             onExplore={() => scrollToSection('portfolio')}
@@ -126,7 +105,7 @@ export default function App() {
           />
 
           {/* Portfolio Grid Section */}
-          <PortfolioGrid onOpenImageModal={handleOpenImageModal} />
+          <PortfolioGallery onOpenImageModal={handleOpenImageModal} />
 
           {/* About Section */}
           <AboutSection
