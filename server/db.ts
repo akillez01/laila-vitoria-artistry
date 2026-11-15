@@ -1,4 +1,5 @@
 import { createClient, type InArgs, type InStatement } from '@libsql/client';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
@@ -61,4 +62,21 @@ export async function initDb() {
   await ensureColumn('client_galleries', 'client_email', "TEXT NOT NULL DEFAULT ''");
   await ensureColumn('portfolio_photos', 'media_type', "TEXT NOT NULL DEFAULT 'photo'");
   await ensureColumn('portfolio_photos', 'credit', "TEXT NOT NULL DEFAULT ''");
+  await ensureColumn('album_images', 'album_id', 'TEXT');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_album_images_album ON album_images(album_id, sort_order)');
+
+  // Fotos soltas de antes da criação de álbuns: cada uma vira um álbum próprio, com ela de capa.
+  const orphans = await db.all<{ id: string; title: string; description: string; sort_order: number }>(
+    'SELECT id, title, description, sort_order FROM album_images WHERE album_id IS NULL ORDER BY sort_order ASC',
+  );
+  for (const img of orphans) {
+    const albumId = crypto.randomUUID();
+    await db.batch([
+      {
+        sql: 'INSERT INTO albums (id, title, description, cover_image_id, sort_order) VALUES (?, ?, ?, ?, ?)',
+        args: [albumId, img.title, img.description || '', img.id, img.sort_order],
+      },
+      { sql: 'UPDATE album_images SET album_id = ?, sort_order = 0 WHERE id = ?', args: [albumId, img.id] },
+    ]);
+  }
 }

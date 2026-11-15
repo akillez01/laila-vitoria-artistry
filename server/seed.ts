@@ -196,10 +196,12 @@ async function seedAlbum() {
     { file: 'andor-cirio-flores.jpeg', title: 'Detalhe Floral do Andor', description: 'Close-up do andor ricamente decorado, capturando o brilho dourado e a devoção do Círio.' },
   ];
 
-  const insert = 'INSERT INTO album_images (id, title, description, url, sort_order) VALUES (?, ?, ?, ?, ?)';
+  const albumId = crypto.randomUUID();
+  await db.run('INSERT INTO albums (id, title, description, sort_order) VALUES (?, ?, ?, 0)', albumId, 'Registros Autorais', 'Dança, celebrações de 15 anos e procissões culturais.');
+  const insert = 'INSERT INTO album_images (id, album_id, title, description, url, sort_order) VALUES (?, ?, ?, ?, ?, ?)';
   for (const [i, img] of images.entries()) {
     const url = await copyAlbumSeedImage(img.file);
-    await db.run(insert, crypto.randomUUID(), img.title, img.description, url, i);
+    await db.run(insert, crypto.randomUUID(), albumId, img.title, img.description, url, i);
   }
 }
 

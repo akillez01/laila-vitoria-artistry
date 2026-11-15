@@ -1,24 +1,29 @@
-import { ArrowLeft, ChevronLeft, ChevronRight, Image as ImageIcon, X } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Image as ImageIcon, Images, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { ALBUM_IMAGES } from '../data/albumData';
 import { api } from '../lib/api';
-import { AlbumImage } from '../types';
+import { Album, AlbumImage } from '../types';
 
 interface AlbumsViewProps {
   onBack: () => void;
 }
 
 export const AlbumsView: React.FC<AlbumsViewProps> = ({ onBack }) => {
-  const [remoteImages, setRemoteImages] = useState<AlbumImage[] | null>(null);
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [albums, setAlbums] = useState<Album[] | null>(null);
+  const [openAlbum, setOpenAlbum] = useState<Album | null>(null);
 
   useEffect(() => {
-    api<{ images: AlbumImage[] }>('/api/albums')
-      .then(({ images }) => setRemoteImages(images))
-      .catch(() => setRemoteImages([]));
+    api<{ albums: Album[] }>('/api/albums')
+      .then(({ albums }) => setAlbums(albums.filter((a) => a.photoCount > 0)))
+      .catch(() => setAlbums([]));
   }, []);
 
-  const images = remoteImages && remoteImages.length > 0 ? remoteImages : ALBUM_IMAGES;
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [openAlbum]);
+
+  if (openAlbum) {
+    return <AlbumDetailView album={openAlbum} onBack={() => setOpenAlbum(null)} />;
+  }
 
   return (
     <main className="min-h-screen bg-[#f9f9f9] dark:bg-[#0f1012] pt-8 pb-20">
@@ -44,39 +49,111 @@ export const AlbumsView: React.FC<AlbumsViewProps> = ({ onBack }) => {
           </div>
         </div>
 
-        {/* Masonry-style Grid */}
-        <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
-          {images.map((image, index) => (
-            <div
-              key={image.id}
-              className="break-inside-avoid relative group overflow-hidden rounded-xl bg-neutral-200 dark:bg-neutral-800 cursor-pointer shadow-md hover:shadow-xl transition-all duration-300"
-              onClick={() => setLightboxIndex(index)}
-              data-cursor="view"
-            >
-              <img
-                src={image.url}
-                alt={image.title}
-                className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700 ease-in-out"
-                loading="lazy"
-              />
-              {/* Hover Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-                <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold mb-2">
-                  Registro Autoral
-                </span>
-                <h3 className="font-serif italic font-medium text-white text-xl md:text-2xl mb-1">
-                  {image.title}
-                </h3>
-                <p className="text-white/80 text-sm line-clamp-2">
-                  {image.description}
-                </p>
-              </div>
-            </div>
-          ))}
+        {albums === null ? (
+          <p className="text-neutral-500">Carregando álbuns...</p>
+        ) : albums.length === 0 ? (
+          <p className="text-neutral-500">Nenhum álbum publicado ainda.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {albums.map((album) => (
+              <button
+                key={album.id}
+                onClick={() => setOpenAlbum(album)}
+                className="text-left relative group overflow-hidden rounded-xl bg-neutral-200 dark:bg-neutral-800 shadow-md hover:shadow-xl transition-all duration-300"
+                data-cursor="view"
+              >
+                <div className="aspect-[4/5] overflow-hidden">
+                  {album.coverUrl && (
+                    <img
+                      src={album.coverUrl}
+                      alt={album.title}
+                      className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-in-out"
+                      loading="lazy"
+                    />
+                  )}
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-6">
+                  <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-emerald-400 font-bold mb-2">
+                    <Images className="w-3.5 h-3.5" />
+                    {album.photoCount} {album.photoCount === 1 ? 'foto' : 'fotos'}
+                  </span>
+                  <h3 className="font-serif italic font-medium text-white text-2xl md:text-3xl mb-1">{album.title}</h3>
+                  {album.description && <p className="text-white/80 text-sm line-clamp-2">{album.description}</p>}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
+  );
+};
+
+const AlbumDetailView: React.FC<{ album: Album; onBack: () => void }> = ({ album, onBack }) => {
+  const [images, setImages] = useState<AlbumImage[] | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    api<{ images: AlbumImage[] }>(`/api/albums/${album.id}`)
+      .then(({ images }) => setImages(images))
+      .catch(() => setImages([]));
+  }, [album.id]);
+
+  return (
+    <main className="min-h-screen bg-[#f9f9f9] dark:bg-[#0f1012] pt-8 pb-20">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-8 md:px-12">
+        <div className="mb-8 pb-4 border-b border-neutral-200 dark:border-neutral-800">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-neutral-500 hover:text-neutral-900 dark:hover:text-emerald-400 transition-colors mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" /> Todos os álbuns
+          </button>
+          <h1 className="font-serif italic font-medium text-4xl sm:text-5xl text-neutral-900 dark:text-white break-words">
+            {album.title}
+          </h1>
+          {album.description && <p className="mt-3 text-neutral-600 dark:text-neutral-400 max-w-2xl">{album.description}</p>}
+          {images && (
+            <p className="mt-2 text-xs uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-bold">
+              {images.length} {images.length === 1 ? 'foto' : 'fotos'}
+            </p>
+          )}
         </div>
+
+        {images === null ? (
+          <p className="text-neutral-500">Carregando fotos...</p>
+        ) : images.length === 0 ? (
+          <p className="text-neutral-500">Este álbum ainda não tem fotos.</p>
+        ) : (
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6">
+            {images.map((image, index) => (
+              <div
+                key={image.id}
+                className="break-inside-avoid relative group overflow-hidden rounded-xl bg-neutral-200 dark:bg-neutral-800 cursor-pointer shadow-md hover:shadow-xl transition-all duration-300"
+                onClick={() => setLightboxIndex(index)}
+                data-cursor="view"
+              >
+                <img
+                  src={image.url}
+                  alt={image.title || album.title}
+                  className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700 ease-in-out"
+                  loading="lazy"
+                />
+                {(image.title || image.description) && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
+                    {image.title && (
+                      <h3 className="font-serif italic font-medium text-white text-xl md:text-2xl mb-1">{image.title}</h3>
+                    )}
+                    {image.description && <p className="text-white/80 text-sm line-clamp-2">{image.description}</p>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {lightboxIndex !== null && (
+      {lightboxIndex !== null && images && (
         <AlbumLightbox
           images={images}
           index={lightboxIndex}
@@ -152,11 +229,11 @@ const AlbumLightbox: React.FC<{
       >
         <img
           src={image.url}
-          alt={image.title}
+          alt={image.title || 'Foto do álbum'}
           className="max-w-full max-h-[75vh] object-contain rounded-md shadow-2xl"
         />
         <div className="text-center px-4">
-          <h3 className="font-serif italic font-medium text-white text-xl sm:text-2xl">{image.title}</h3>
+          {image.title && <h3 className="font-serif italic font-medium text-white text-xl sm:text-2xl">{image.title}</h3>}
           {image.description && (
             <p className="text-white/70 text-sm mt-1 max-w-2xl mx-auto">{image.description}</p>
           )}

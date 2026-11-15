@@ -20,9 +20,20 @@ export interface PhotoItem {
 
 export interface AlbumImage {
   id: string;
+  albumId?: string;
   title: string;
   description: string;
   url: string;
+}
+
+export interface Album {
+  id: string;
+  title: string;
+  description: string;
+  coverImageId: string | null;
+  coverUrl: string;
+  photoCount: number;
+  createdAt: string;
 }
 
 export interface ClientGallery {
