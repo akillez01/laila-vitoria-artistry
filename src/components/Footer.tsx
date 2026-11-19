@@ -18,7 +18,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenContact, onScr
           <p className="font-bold text-neutral-900 dark:text-white">© 2024 Layla Vitória Artistry • Fotografia Autoral</p>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 flex items-start gap-1.5 leading-relaxed">
             <MapPin className="w-3.5 h-3.5 shrink-0 text-amber-500 mt-0.5" />
-            Rua Francisco Nobre Pontes, 04, Quadra 26 - Planalto, CEP: 69044-110, Manaus - AM
           </p>
           <div className="flex flex-wrap items-center gap-4 text-sm pt-1 font-medium">
             <a href="mailto:laaylalopezz@gmail.com" className="hover:text-neutral-900 dark:hover:text-amber-400 transition-colors flex items-center gap-1.5">
